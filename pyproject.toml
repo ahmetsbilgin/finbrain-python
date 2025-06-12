@@ -1,0 +1,36 @@
+[build-system]
+requires = [
+    "setuptools>=61",
+    "setuptools_scm[toml]>=8",
+    "wheel"
+    ]
+build-backend = "setuptools.build_meta"
+
+[project]
+name            = "finbrain-python"
+description     = "Official Python client for the FinBrain API"
+readme          = "README.md"
+license         = {file = "LICENSE"}
+authors         = [{name = "Ahmet Salim Bilgin", email="ahmet@finbrain.tech"}]
+requires-python = ">=3.9"
+dependencies    = [
+    "requests>=2.31",
+    "typer[all]>=0.12"
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}        # ← src-layout
+packages    = ["finbrain", "finbrain.aio", "finbrain.endpoints"]
+
+[tool.setuptools_scm]
+version_scheme = "release-branch-semver"   # defaults are fine; this is optional
+tag_regex      = '^v\d+\.\d+\.\d+$'       # ensure tags look like v0.1.0
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "responses",                  # HTTP mocking
+    "build",
+    "twine",
+    "ruff",                       # linter/formatter (optional)
+]

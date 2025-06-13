@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 import responses
 from urllib.parse import urljoin, urlencode

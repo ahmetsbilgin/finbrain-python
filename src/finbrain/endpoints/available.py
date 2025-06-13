@@ -1,10 +1,13 @@
 # src/finbrain/endpoints/available.py
 from __future__ import annotations
-
-from typing import TYPE_CHECKING, List, Dict
+import pandas as pd
+from typing import TYPE_CHECKING, Literal, List, Dict, Any
 
 if TYPE_CHECKING:  # imported only by type-checkers (mypy, pyright…)
     from ..client import FinBrainClient
+
+_PType = Literal["daily", "monthly"]
+_ALLOWED: set[str] = {"daily", "monthly"}
 
 
 class AvailableAPI:
@@ -34,24 +37,35 @@ class AvailableAPI:
         ['S&P 500', 'NASDAQ', ...]
         """
         data = self._c._request("GET", "available/markets")
+
+        if isinstance(data, List):
+            return data
+
         return data.get("availableMarkets", [])
 
     # ------------------------------------------------------------
-    def tickers(self, type_: str) -> List[Dict[str, str]]:
+    def tickers(
+        self,
+        prediction_type: _PType,
+        *,
+        as_dataframe: bool = False,
+    ) -> List[Dict[str, Any]] | pd.DataFrame:
         """
-        Return all tickers for the supplied *TYPE* exactly as
-        documented by FinBrain.
+        List all tickers for which **FinBrain has predictions** of the given type.
 
         Parameters
         ----------
-        type_ :
-            Path segment after ``/available/tickers/`` - whatever the
-            FinBrain docs list (e.g. ``sp500``, ``nasdaq``, ``dax`` …).
+        prediction_type :
+            Either ``"daily"`` (10-day horizon predictions) or
+            ``"monthly"`` (12-month horizon predictions).  Case-insensitive.
+        as_dataframe :
+            If *True*, return a ``pd.DataFrame``;
+            otherwise return the raw list of dicts.
 
         Returns
         -------
-        list[dict]
-            Each element looks like::
+        list[dict] | pandas.DataFrame
+            Each row / dict contains at least::
 
                 {
                     "ticker": "AAPL",
@@ -59,5 +73,11 @@ class AvailableAPI:
                     "market": "S&P 500"
                 }
         """
-        path = f"available/tickers/{type_}"
-        return self._c._request("GET", path)
+        prediction_type = prediction_type.lower()
+        if prediction_type not in _ALLOWED:
+            raise ValueError("prediction_type must be 'daily' or 'monthly'")
+
+        path = f"available/tickers/{prediction_type}"
+        data: List[Dict[str, Any]] = self._c._request("GET", path)
+
+        return pd.DataFrame(data) if as_dataframe else data

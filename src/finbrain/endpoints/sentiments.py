@@ -1,7 +1,7 @@
 from __future__ import annotations
-
+import pandas as pd
 import datetime as _dt
-from typing import TYPE_CHECKING, Dict, Any
+from typing import TYPE_CHECKING, Dict, Any, List
 
 if TYPE_CHECKING:  # imported only by static type-checkers
     from ..client import FinBrainClient
@@ -14,7 +14,7 @@ class SentimentsAPI:
     Example
     -------
     >>> fb.sentiments.ticker(
-    ...     market="sp500",
+    ...     market="S&P 500",
     ...     symbol="AMZN",
     ...     date_from="2024-01-01",
     ...     date_to="2024-02-02",
@@ -42,14 +42,17 @@ class SentimentsAPI:
         date_from: _dt.date | str | None = None,
         date_to: _dt.date | str | None = None,
         days: int | None = None,
-    ) -> Dict[str, Any]:
+        as_dataframe: bool = False,
+    ) -> Dict[str, Any] | pd.DataFrame:
         """
         Retrieve sentiment scores for a *single* ticker.
 
         Parameters
         ----------
         market :
-            The market segment as used in the path (e.g. ``sp500``, ``nasdaq``).
+            FinBrain **market code** exactly as returned by
+            :py:meth:`finbrain.AvailableAPI.markets`
+            (e.g. ``S&P 500``, ``NASDAQ``, ``Germany DAX``).
         symbol :
             Stock/crypto symbol (``AAPL``, ``AMZN`` …) *uppercase recommended*.
         date_from, date_to :
@@ -58,6 +61,9 @@ class SentimentsAPI:
         days :
             Alternative to explicit dates - integer 1…120 for "past *n* days".
             Ignored if either ``date_from`` or ``date_to`` is supplied.
+        as_dataframe :
+            If *True*, return a **DataFrame** with a ``date`` index and a single
+            ``sentiment`` column.
 
         Returns
         -------
@@ -80,7 +86,20 @@ class SentimentsAPI:
 
         path = f"sentiments/{market}/{symbol.upper()}"
 
-        return self._c._request("GET", path, params=params)
+        data: Dict[str, Any] = self._c._request("GET", path, params=params)
+
+        if as_dataframe:
+            sa: Dict[str, str] = data.get("sentimentAnalysis", {})
+            df = (
+                pd.Series(sa, name="sentiment")
+                .astype(float)
+                .rename_axis("date")
+                .to_frame()
+            )
+            df.index = pd.to_datetime(df.index)
+            return df
+
+        return data
 
 
 # ------------------------------------------------------------------------- #
@@ -88,6 +107,4 @@ class SentimentsAPI:
 # ------------------------------------------------------------------------- #
 def _to_datestr(value: _dt.date | str) -> str:
     """Convert ``datetime.date`` → 'YYYY-MM-DD' but pass strings through."""
-    if isinstance(value, _dt.date):
-        return value.isoformat()
-    return value
+    return value.isoformat() if isinstance(value, _dt.date) else value

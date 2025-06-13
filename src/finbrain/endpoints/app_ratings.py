@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import datetime as _dt
-from typing import TYPE_CHECKING, Dict, Any
+import pandas as pd
+from typing import TYPE_CHECKING, Dict, Any, List
 
 if TYPE_CHECKING:  # imported only by static-type tools
     from ..client import FinBrainClient
@@ -14,7 +15,7 @@ class AppRatingsAPI:
     Example
     -------
     >>> fb.app_ratings.ticker(
-    ...     market="sp500",
+    ...     market="S&P 500",
     ...     symbol="AMZN",
     ...     date_from="2024-01-01",
     ...     date_to="2024-02-02",
@@ -44,14 +45,17 @@ class AppRatingsAPI:
         *,
         date_from: _dt.date | str | None = None,
         date_to: _dt.date | str | None = None,
-    ) -> Dict[str, Any]:
+        as_dataframe: bool = False,
+    ) -> Dict[str, Any] | pd.DataFrame:
         """
         Fetch mobile-app ratings for *symbol* in *market*.
 
         Parameters
         ----------
         market :
-            Path segment after ``/appratings/`` (e.g. ``sp500``, ``nasdaq``).
+            FinBrain **market code** exactly as returned by
+            :py:meth:`finbrain.AvailableAPI.markets`
+            (e.g. ``S&P 500``, ``NASDAQ``, ``Germany DAX``).
         symbol :
             Ticker symbol, upper-cased before the request.
         date_from, date_to :
@@ -59,7 +63,7 @@ class AppRatingsAPI:
 
         Returns
         -------
-        dict
+        dict | pandas.DataFrame
             Keys: ``ticker``, ``name``, ``appRatings`` (list of dicts).
         """
         params: Dict[str, str] = {}
@@ -70,7 +74,17 @@ class AppRatingsAPI:
             params["dateTo"] = _to_datestr(date_to)
 
         path = f"appratings/{market}/{symbol.upper()}"
-        return self._c._request("GET", path, params=params)
+        data = self._c._request("GET", path, params=params)
+
+        if as_dataframe:
+            rows: List[Dict[str, Any]] = data.get("appRatings", [])
+            df = pd.DataFrame(rows)
+            if not df.empty and "date" in df.columns:
+                df["date"] = pd.to_datetime(df["date"])
+                df.set_index("date", inplace=True)
+            return df
+
+        return data
 
 
 # ---------------------------------------------------------------------- #

@@ -1,7 +1,8 @@
 from __future__ import annotations
 import pandas as pd
 import datetime as _dt
-from typing import TYPE_CHECKING, Dict, Any, List
+from urllib.parse import quote
+from typing import TYPE_CHECKING, Dict, Any
 
 if TYPE_CHECKING:  # imported only by static type-checkers
     from ..client import FinBrainClient
@@ -50,9 +51,10 @@ class SentimentsAPI:
         Parameters
         ----------
         market :
-            FinBrain **market code** exactly as returned by
-            :py:meth:`finbrain.AvailableAPI.markets`
-            (e.g. ``S&P 500``, ``NASDAQ``, ``Germany DAX``).
+            Market name **exactly as FinBrain lists it**
+            (e.g. ``"S&P 500"``, ``"Germany DAX"``, ``"HK Hang Seng"``).
+            Spaces and special characters are accepted; they are URL-encoded
+            automatically.
         symbol :
             Stock/crypto symbol (``AAPL``, ``AMZN`` …) *uppercase recommended*.
         date_from, date_to :
@@ -67,12 +69,7 @@ class SentimentsAPI:
 
         Returns
         -------
-        dict
-            The raw JSON FinBrain returns, keys:
-
-            - ``ticker`` - symbol
-            - ``name``   - company name
-            - ``sentimentAnalysis`` - mapping of ``YYYY-MM-DD`` → score string
+        dict | pandas.DataFrame
         """
         # Build query parameters
         params: Dict[str, str] = {}
@@ -84,7 +81,8 @@ class SentimentsAPI:
         if days is not None and "dateFrom" not in params and "dateTo" not in params:
             params["days"] = str(days)
 
-        path = f"sentiments/{market}/{symbol.upper()}"
+        market_slug = quote(market, safe="")
+        path = f"sentiments/{market_slug}/{symbol.upper()}"
 
         data: Dict[str, Any] = self._c._request("GET", path, params=params)
 

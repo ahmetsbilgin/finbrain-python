@@ -1,12 +1,19 @@
 # tests/test_sentiments.py
+import pytest
 import pandas as pd
+from urllib.parse import quote
+from finbrain.exceptions import BadRequest
 from .conftest import stub_json
+
+MARKET = "S&P 500"
+ENC_MARKET = quote(MARKET, safe="")
+TICKER = "AMZN"
 
 
 # ─────────── raw JSON branch ────────────────────────────────────────────
 def test_sentiments_raw_ok(client, _activate_responses):
     """Default behaviour returns the original dict."""
-    path = "sentiments/sp500/AMZN"
+    path = f"sentiments/{ENC_MARKET}/AMZN"
     payload = {
         "ticker": "AMZN",
         "name": "Amazon.com Inc.",
@@ -22,8 +29,8 @@ def test_sentiments_raw_ok(client, _activate_responses):
     )
 
     data = client.sentiments.ticker(
-        market="sp500",
-        symbol="AMZN",
+        market=MARKET,
+        symbol=TICKER,
         date_from="2024-01-01",
         date_to="2024-01-02",
     )
@@ -36,7 +43,9 @@ def test_sentiments_raw_ok(client, _activate_responses):
 # ─────────── DataFrame branch ───────────────────────────────────────────
 def test_sentiments_dataframe_ok(client, _activate_responses):
     """as_dataframe=True returns a DataFrame indexed by date."""
-    path = "sentiments/sp500/AMZN"
+
+    path = f"sentiments/{ENC_MARKET}/AMZN"
+
     payload = {
         "ticker": "AMZN",
         "name": "Amazon.com Inc.",
@@ -55,8 +64,8 @@ def test_sentiments_dataframe_ok(client, _activate_responses):
     )
 
     df = client.sentiments.ticker(
-        market="sp500",
-        symbol="AMZN",
+        market=MARKET,
+        symbol=TICKER,
         days=2,
         as_dataframe=True,
     )
@@ -67,3 +76,11 @@ def test_sentiments_dataframe_ok(client, _activate_responses):
     assert pd.Timestamp("2024-01-02") in df.index
     # ensure index is datetime
     assert pd.api.types.is_datetime64_any_dtype(df.index)
+
+
+def test_sentiments_bad_request(client, _activate_responses):
+    path = f"sentiments/{ENC_MARKET}/{TICKER}"
+    stub_json(_activate_responses, "GET", path, {"message": "bad"}, status=400)
+
+    with pytest.raises(BadRequest):
+        client.sentiments.ticker(MARKET, TICKER)

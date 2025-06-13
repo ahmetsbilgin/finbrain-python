@@ -1,5 +1,6 @@
 from __future__ import annotations
-
+import pandas as pd
+from urllib.parse import quote
 import datetime as _dt
 from typing import TYPE_CHECKING, Dict, Any
 
@@ -27,28 +28,29 @@ class HouseTradesAPI:
         *,
         date_from: _dt.date | str | None = None,
         date_to: _dt.date | str | None = None,
-    ) -> Dict[str, Any]:
+        as_dataframe: bool = False,
+    ) -> Dict[str, Any] | pd.DataFrame:
         """
         Fetch House-member trades for *symbol* in *market*.
 
         Parameters
         ----------
         market :
-            Path segment such as ``sp500``, ``nasdaq`` - must match your
-            FinBrain subscription.
+            Market name **exactly as FinBrain lists it**
+            (e.g. ``"S&P 500"``, ``"Germany DAX"``, ``"HK Hang Seng"``).
+            Spaces and special characters are accepted; they are URL-encoded
+            automatically.
         symbol :
             Ticker symbol; auto-upper-cased.
         date_from, date_to :
             Optional ISO dates (``YYYY-MM-DD``) bounding the returned rows.
+        as_dataframe :
+            If *True*, return a **pandas.DataFrame** indexed by ``date``;
+            otherwise return the raw JSON dict.
 
         Returns
         -------
-        dict
-            Keys:
-
-            * ``ticker``       - symbol
-            * ``name``         - company name
-            * ``houseTrades``  - list[dict] (date, amount, representative, type)
+        dict | pandas.DataFrame
         """
         params: Dict[str, str] = {}
         if date_from:
@@ -56,8 +58,20 @@ class HouseTradesAPI:
         if date_to:
             params["dateTo"] = _to_datestr(date_to)
 
-        path = f"housetrades/{market}/{symbol.upper()}"
-        return self._c._request("GET", path, params=params)
+        market_slug = quote(market, safe="")
+        path = f"housetrades/{market_slug}/{symbol.upper()}"
+
+        data: Dict[str, Any] = self._c._request("GET", path, params=params)
+
+        if as_dataframe:
+            rows = data.get("houseTrades", [])
+            df = pd.DataFrame(rows)
+            if not df.empty and "date" in df.columns:
+                df["date"] = pd.to_datetime(df["date"])
+                df.set_index("date", inplace=True)
+            return df
+
+        return data
 
 
 # ---------------------------------------------------------------------- #
@@ -65,6 +79,4 @@ class HouseTradesAPI:
 # ---------------------------------------------------------------------- #
 def _to_datestr(value: _dt.date | str) -> str:
     """Convert ``datetime.date`` → ``YYYY-MM-DD``; leave strings untouched."""
-    if isinstance(value, _dt.date):
-        return value.isoformat()
-    return value
+    return value.isoformat() if isinstance(value, _dt.date) else value

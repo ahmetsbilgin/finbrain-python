@@ -26,6 +26,7 @@ exclude = ["tests*"]
 
 [tool.setuptools_scm]
 version_scheme = "release-branch-semver"   # defaults are fine; this is optional
+write_to = "src/finbrain/_version.py"
 
 [project.optional-dependencies]
 dev = [

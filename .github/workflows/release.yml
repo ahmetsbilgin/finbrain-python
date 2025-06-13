@@ -22,7 +22,7 @@ jobs:
 
       # ─────────── push to TestPyPI first ───────────
       - name: Upload to TestPyPI
-        run: twine upload --repository testpypi dist/*
+        run: twine upload --repository-url https://test.pypi.org/legacy/ dist/*
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}

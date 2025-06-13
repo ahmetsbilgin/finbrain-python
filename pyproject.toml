@@ -20,9 +20,9 @@ dependencies    = [
     "pandas>=2.2",
 ]
 
-[tool.setuptools]
-package-dir = {"" = "src"}        # ← src-layout
-packages    = ["finbrain", "finbrain.aio", "finbrain.endpoints"]
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["tests*"]
 
 [tool.setuptools_scm]
 version_scheme = "release-branch-semver"   # defaults are fine; this is optional

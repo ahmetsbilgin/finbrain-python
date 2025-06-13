@@ -25,19 +25,77 @@ Fetch deep-learning price predictions, sentiment scores, insider trades, LinkedI
 ## 🚀 Quick start
 Install the SDK:
 ```
-pip install finbrain
+pip install finbrain-python
 ```
 Create a client and fetch data:
 ```
 from finbrain import FinBrainClient
 
-fb = FinBrainClient(api_key="YOUR_KEY")
+fb = FinBrainClient(api_key="YOUR_KEY")        # create once, reuse below
 
-print(fb.available.markets())
-print(fb.predictions.ticker("AAPL")["prediction"]["expectedShort"])
+# ---------- availability ----------
+fb.available.markets()                         # list markets
+fb.available.tickers("daily", as_dataframe=True)
+
+# ---------- app ratings ----------
+fb.app_ratings.ticker("S&P 500", "AMZN",
+                      date_from="2025-01-01",
+                      date_to="2025-05-31",
+                      as_dataframe=True)
+
+# ---------- analyst ratings ----------
+fb.analyst_ratings.ticker("S&P 500", "AMZN",
+                          date_from="2025-01-01",
+                          date_to="2025-05-31",
+                          as_dataframe=True)
+
+# ---------- house trades ----------
+fb.house_trades.ticker("S&P 500", "AMZN",
+                       date_from="2025-01-01",
+                       date_to="2025-05-31",
+                       as_dataframe=True)
+
+# ---------- insider transactions ----------
+fb.insider_transactions.ticker("S&P 500", "AMZN", as_dataframe=True)
+
+# ---------- LinkedIn metrics ----------
+fb.linkedin_data.ticker("S&P 500", "AMZN",
+                        date_from="2025-01-01",
+                        date_to="2025-05-31",
+                        as_dataframe=True)
+
+# ---------- options put/call ----------
+fb.options.put_call("S&P 500", "AMZN",
+                    date_from="2025-01-01",
+                    date_to="2025-05-31",
+                    as_dataframe=True)
+
+# ---------- price predictions ----------
+fb.predictions.market("S&P 500", as_dataframe=True)   # all tickers in market
+fb.predictions.ticker("AMZN", as_dataframe=True)      # single ticker
+
+# ---------- news sentiment ----------
+fb.sentiments.ticker("S&P 500", "AMZN",
+                     date_from="2025-01-01",
+                     date_to="2025-05-31",
+                     as_dataframe=True)
 ```
 
-### Async
+## 🔑 Authentication
+
+To call the API you need an **API key**, obtained by purchasing a **FinBrain API subscription**.  
+*(The Terminal-only subscription does **not** include an API key.)*
+
+1. Subscribe at <https://www.finbrain.tech> → FinBrain API.
+2. Copy the key from your dashboard.
+3. Pass it once when you create the client:
+
+```
+from finbrain import FinBrainClient
+fb = FinBrainClient(api_key="YOUR_KEY")
+```
+
+### Async(currently under development)
 
 ```
 import asyncio, os
@@ -50,7 +108,7 @@ def  main():
 asyncio.run(main())` 
 ```
 
-### CLI
+### CLI(currently under development)
 
 ```
 export FINBRAIN_API_KEY=your_key
@@ -105,13 +163,14 @@ except BadRequest as exc:
     
 -   Version auto-generated from Git tags (setuptools-scm)
 
-`git tag -a v0.2.0 -m "Add options.put_call endpoint" git push --tags # GitHub Actions builds & uploads to PyPI` 
+```
+git tag -a v0.2.0 -m "Add options.chain endpoint"
+git push --tags # GitHub Actions builds & uploads to PyPI
+```
 
 ----------
 
 ## 🧑‍💻 Development
-
-
 
 ```
 git clone https://github.com/finbrain-tech/finbrain-python cd finbrain-python
@@ -121,7 +180,7 @@ pip install -e .[dev]
 ruff check . # lint / format pytest -q # unit tests (mocked) 
 ```
 
-### Live integration test
+### Live integration test(currently under development)
 
 Set `FINBRAIN_LIVE_KEY`, then run:
 

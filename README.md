@@ -1,7 +1,7 @@
 # FinBrain Python SDK&nbsp;<!-- omit in toc -->
 
 [![PyPI version](https://img.shields.io/pypi/v/finbrain-python.svg)](https://pypi.org/project/finbrain-python/)
-[![CI](https://github.com/finbrain-tech/finbrain-python/actions/workflows/ci.yml/badge.svg)](https://github.com/finbrain-tech/finbrain-python/actions/workflows/ci.yml)
+[![CI](https://github.com/ahmetsbilgin/finbrain-python/actions/workflows/ci.yml/badge.svg)](https://github.com/ahmetsbilgin/finbrain-python/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
 
 **Official Python client** for the [FinBrain API](https://docs.finbrain.tech).  

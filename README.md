@@ -7,7 +7,7 @@
 **Official Python client** for the [FinBrain API](https://docs.finbrain.tech).  
 Fetch deep-learning price predictions, sentiment scores, insider trades, LinkedIn metrics, options data and more — with a single import.
 
-*Python ≥ 3.9  •  requests  •  asyncio optional.*
+*Python ≥ 3.9  •  requests & pandas  •  asyncio optional.*
 
 ---
 

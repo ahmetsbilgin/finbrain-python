@@ -95,20 +95,20 @@ from finbrain import FinBrainClient
 fb = FinBrainClient(api_key="YOUR_KEY")
 ```
 
-### Async(currently under development)
+### Async (currently under development)
 
 ```
 import asyncio, os
 from finbrain.aio import FinBrainAsyncClient async
-def  main():
+def main():
     async with FinBrainAsyncClient(api_key=os.getenv("FINBRAIN_API_KEY")) as fb:
-        data = await fb.sentiments.ticker("sp500", "AMZN")
+        data = await fb.sentiments.ticker("S&P 500", "AMZN")
         print(list(data["sentimentAnalysis"].items())[:3])
 
-asyncio.run(main())` 
+asyncio.run(main())
 ```
 
-### CLI(currently under development)
+### CLI (currently under development)
 
 ```
 export FINBRAIN_API_KEY=your_key
@@ -143,7 +143,7 @@ from finbrain.exceptions import BadRequest
 try:
     fb.predictions.ticker("MSFT", prediction_type="weekly")
 except BadRequest as exc:
-    print("Invalid parameters:", exc)` 
+    print("Invalid parameters:", exc)
 ```
 
 | HTTP status | Exception class          | Meaning                               |
@@ -173,7 +173,8 @@ git push --tags # GitHub Actions builds & uploads to PyPI
 ## 🧑‍💻 Development
 
 ```
-git clone https://github.com/finbrain-tech/finbrain-python cd finbrain-python
+git clone https://github.com/finbrain-tech/finbrain-python
+cd finbrain-python
 python -m venv .venv && source .venv/bin/activate
 pip install -e .[dev]
 

@@ -101,7 +101,7 @@ fb = FinBrainClient(api_key="YOUR_KEY")
 import asyncio, os
 from finbrain.aio import FinBrainAsyncClient async
 def  main():
-	async  with FinBrainAsyncClient(api_key=os.getenv("FINBRAIN_API_KEY")) as fb:
+    async with FinBrainAsyncClient(api_key=os.getenv("FINBRAIN_API_KEY")) as fb:
         data = await fb.sentiments.ticker("sp500", "AMZN")
         print(list(data["sentimentAnalysis"].items())[:3])
 
@@ -143,7 +143,7 @@ from finbrain.exceptions import BadRequest
 try:
     fb.predictions.ticker("MSFT", prediction_type="weekly")
 except BadRequest as exc:
-	print("Invalid parameters:", exc)` 
+    print("Invalid parameters:", exc)` 
 ```
 
 | HTTP status | Exception class          | Meaning                               |
@@ -177,7 +177,8 @@ git clone https://github.com/finbrain-tech/finbrain-python cd finbrain-python
 python -m venv .venv && source .venv/bin/activate
 pip install -e .[dev]
 
-ruff check . # lint / format pytest -q # unit tests (mocked) 
+ruff check . # lint / format
+pytest -q # unit tests (mocked) 
 ```
 
 ### Live integration test(currently under development)

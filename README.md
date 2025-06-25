@@ -90,28 +90,28 @@ Plot helpers in a nutshell
 - `as_json=True` – skips display and returns the figure as a Plotly-JSON string, ready to embed elsewhere.
 
 ```
-# App Ratings Chart - Apple App Store (or Google Play Store)
+# ---------- App Ratings Chart - Apple App Store or Google Play Store ----------
 fb.plot.app_ratings("S&P 500", "AMZN",
                     store="app",                # "play" for Google Play Store
                     date_from="2025-01-01",
                     date_to="2025-06-30")
 
-# LinkedIn Metrics Chart
+# ---------- LinkedIn Metrics Chart ----------
 fb.plot.linkedin("S&P 500", "AMZN",
                  date_from="2025-01-01", date_to="2025-06-30")
 
-# Put-Call Ratio Chart
+# ---------- Put-Call Ratio Chart ----------
 fb.plot.options("S&P 500", "AMZN",
                 kind="put_call",
                 date_from="2025-01-01", date_to="2025-06-30")
 
-# Predictions Chart
+# ---------- Predictions Chart ----------
 fb.plot.predictions("AMZN")
 
-# Sentiments Chart
+# ---------- Sentiments Chart ----------
 fb.plot.sentiments("S&P 500", "AMZN",
-                         date_from="2025-01-01",
-                         date_to="2025-05-31")
+                   date_from="2025-01-01",
+                   date_to="2025-06-30")
 ```
 
 ## 🔑 Authentication

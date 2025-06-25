@@ -6,6 +6,7 @@ from typing import Any, Dict, Optional
 import requests
 from urllib.parse import urljoin
 
+from .plotting import _PlotNamespace
 from .exceptions import http_error_to_exception, InvalidResponse
 from . import __version__
 
@@ -51,6 +52,9 @@ class FinBrainClient:
 
         self.timeout = timeout
         self.retries = retries
+
+        # expose plotting under .plot
+        self.plot = _PlotNamespace(self)
 
         # wire endpoint helpers
         self.available = AvailableAPI(self)

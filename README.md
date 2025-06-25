@@ -40,19 +40,19 @@ fb.available.tickers("daily", as_dataframe=True)
 # ---------- app ratings ----------
 fb.app_ratings.ticker("S&P 500", "AMZN",
                       date_from="2025-01-01",
-                      date_to="2025-05-31",
+                      date_to="2025-06-30",
                       as_dataframe=True)
 
 # ---------- analyst ratings ----------
 fb.analyst_ratings.ticker("S&P 500", "AMZN",
                           date_from="2025-01-01",
-                          date_to="2025-05-31",
+                          date_to="2025-06-30",
                           as_dataframe=True)
 
 # ---------- house trades ----------
 fb.house_trades.ticker("S&P 500", "AMZN",
                        date_from="2025-01-01",
-                       date_to="2025-05-31",
+                       date_to="2025-06-30",
                        as_dataframe=True)
 
 # ---------- insider transactions ----------
@@ -61,13 +61,13 @@ fb.insider_transactions.ticker("S&P 500", "AMZN", as_dataframe=True)
 # ---------- LinkedIn metrics ----------
 fb.linkedin_data.ticker("S&P 500", "AMZN",
                         date_from="2025-01-01",
-                        date_to="2025-05-31",
+                        date_to="2025-06-30",
                         as_dataframe=True)
 
 # ---------- options put/call ----------
 fb.options.put_call("S&P 500", "AMZN",
                     date_from="2025-01-01",
-                    date_to="2025-05-31",
+                    date_to="2025-06-30",
                     as_dataframe=True)
 
 # ---------- price predictions ----------
@@ -77,8 +77,42 @@ fb.predictions.ticker("AMZN", as_dataframe=True)      # single ticker
 # ---------- news sentiment ----------
 fb.sentiments.ticker("S&P 500", "AMZN",
                      date_from="2025-01-01",
-                     date_to="2025-05-31",
+                     date_to="2025-06-30",
                      as_dataframe=True)
+```
+
+## 📈 Plotting
+
+Plot helpers in a nutshell
+
+- show – defaults to True, so the chart appears immediately.
+
+- as_json=True – skips display and returns the figure as a Plotly-JSON string, ready to embed elsewhere.
+
+```
+# App Ratings Chart - Google Play
+fb.plot.app_ratings("S&P 500", "AMZN",
+                    store="play",
+                    date_from="2025-01-01",
+                    date_to="2025-06-30")
+
+# App Ratings Chart - Apple App Store
+fb.plot.app_ratings("S&P 500", "AMZN",
+                    store="app",
+                    date_from="2025-01-01",
+                    date_to="2025-06-30")
+
+# LinkedIn Metrics Chart
+fb.plot.linkedin("S&P 500", "AMZN",
+                 date_from="2025-01-01", date_to="2025-06-30")
+
+# Put-Call Ratio Chart
+fb.plot.options("S&P 500", "AMZN",
+                kind="put_call",
+                date_from="2025-01-01", date_to="2025-06-30")
+
+# Predictions Chart
+fb.plot.predictions("AMZN")
 ```
 
 ## 🔑 Authentication

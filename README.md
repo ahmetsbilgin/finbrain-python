@@ -7,7 +7,7 @@
 **Official Python client** for the [FinBrain API](https://docs.finbrain.tech).  
 Fetch deep-learning price predictions, sentiment scores, insider trades, LinkedIn metrics, options data and more — with a single import.
 
-*Python ≥ 3.9  •  requests & pandas  •  asyncio optional.*
+*Python ≥ 3.9  •  requests, pandas, numpy & plotly  •  asyncio optional.*
 
 ---
 
@@ -85,20 +85,14 @@ fb.sentiments.ticker("S&P 500", "AMZN",
 
 Plot helpers in a nutshell
 
-- show – defaults to True, so the chart appears immediately.
+- `show` – defaults to True, so the chart appears immediately.
 
-- as_json=True – skips display and returns the figure as a Plotly-JSON string, ready to embed elsewhere.
+- `as_json=True` – skips display and returns the figure as a Plotly-JSON string, ready to embed elsewhere.
 
 ```
-# App Ratings Chart - Google Play
+# App Ratings Chart - Apple App Store (or Google Play Store)
 fb.plot.app_ratings("S&P 500", "AMZN",
-                    store="play",
-                    date_from="2025-01-01",
-                    date_to="2025-06-30")
-
-# App Ratings Chart - Apple App Store
-fb.plot.app_ratings("S&P 500", "AMZN",
-                    store="app",
+                    store="app",                # "play" for Google Play Store
                     date_from="2025-01-01",
                     date_to="2025-06-30")
 
@@ -113,6 +107,11 @@ fb.plot.options("S&P 500", "AMZN",
 
 # Predictions Chart
 fb.plot.predictions("AMZN")
+
+# Sentiments Chart
+fb.plot.sentiments("S&P 500", "AMZN",
+                         date_from="2025-01-01",
+                         date_to="2025-05-31")
 ```
 
 ## 🔑 Authentication
@@ -198,7 +197,7 @@ except BadRequest as exc:
 -   Version auto-generated from Git tags (setuptools-scm)
 
 ```
-git tag -a v0.2.0 -m "Add options.chain endpoint"
+git tag -a 0.2.0 -m "Add options.chain endpoint"
 git push --tags # GitHub Actions builds & uploads to PyPI
 ```
 

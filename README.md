@@ -98,15 +98,17 @@ fb.plot.app_ratings("S&P 500", "AMZN",
 
 # ---------- LinkedIn Metrics Chart ----------
 fb.plot.linkedin("S&P 500", "AMZN",
-                 date_from="2025-01-01", date_to="2025-06-30")
+                 date_from="2025-01-01",
+                 date_to="2025-06-30")
 
 # ---------- Put-Call Ratio Chart ----------
 fb.plot.options("S&P 500", "AMZN",
                 kind="put_call",
-                date_from="2025-01-01", date_to="2025-06-30")
+                date_from="2025-01-01",
+                date_to="2025-06-30")
 
 # ---------- Predictions Chart ----------
-fb.plot.predictions("AMZN")
+fb.plot.predictions("AMZN")         # prediction_type="monthly" for monthly predictions
 
 # ---------- Sentiments Chart ----------
 fb.plot.sentiments("S&P 500", "AMZN",

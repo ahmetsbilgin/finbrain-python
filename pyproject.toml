@@ -29,6 +29,10 @@ exclude = ["tests*"]
 [tool.setuptools_scm]
 version_scheme = "release-branch-semver"   # defaults are fine; this is optional
 
+# ensure the marker is included in the wheel/sdist
+[tool.setuptools.package-data]
+finbrain = ["py.typed"]
+
 [project.optional-dependencies]
 dev = [
     "pytest",

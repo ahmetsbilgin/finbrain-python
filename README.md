@@ -12,6 +12,7 @@ Fetch deep-learning price predictions, sentiment scores, insider trades, LinkedI
 ---
 
 ## ✨ Features
+
 - One-line auth (`FinBrainClient(api_key="…")`)
 - Complete endpoint coverage (predictions, sentiments, options, insider, etc.)
 - Transparent retries & custom error hierarchy (`FinBrainError`)
@@ -23,12 +24,16 @@ Fetch deep-learning price predictions, sentiment scores, insider trades, LinkedI
 ---
 
 ## 🚀 Quick start
+
 Install the SDK:
-```
+
+```bash
 pip install finbrain-python
 ```
+
 Create a client and fetch data:
-```
+
+```python
 from finbrain import FinBrainClient
 
 fb = FinBrainClient(api_key="YOUR_KEY")        # create once, reuse below
@@ -89,7 +94,7 @@ Plot helpers in a nutshell
 
 - `as_json=True` – skips display and returns the figure as a Plotly-JSON string, ready to embed elsewhere.
 
-```
+```python
 # ---------- App Ratings Chart - Apple App Store or Google Play Store ----------
 fb.plot.app_ratings("S&P 500", "AMZN",
                     store="app",                # "play" for Google Play Store
@@ -125,14 +130,14 @@ To call the API you need an **API key**, obtained by purchasing a **FinBrain API
 2. Copy the key from your dashboard.
 3. Pass it once when you create the client:
 
-```
+```python
 from finbrain import FinBrainClient
 fb = FinBrainClient(api_key="YOUR_KEY")
 ```
 
 ### Async (currently under development)
 
-```
+```python
 import asyncio, os
 from finbrain.aio import FinBrainAsyncClient async
 def main():
@@ -145,13 +150,13 @@ asyncio.run(main())
 
 ### CLI (currently under development)
 
-```
+```bash
 export FINBRAIN_API_KEY=your_key
 finbrain markets
 finbrain predict AAPL --type daily
-``` 
+```
 
-----------
+---
 
 ## 📚 Supported endpoints
 
@@ -169,11 +174,11 @@ finbrain predict AAPL --type daily
 | LinkedIn             | `client.linkedin_data.ticker()`          | `/linkedindata/{MARKET}/{TICKER}`                    |
 | Options – Put/Call   | `client.options.put_call()`              | `/putcalldata/{MARKET}/{TICKER}`                     |
 
-----------
+---
 
 ## 🛠️ Error-handling
 
-```
+```python
 from finbrain.exceptions import BadRequest
 try:
     fb.predictions.ticker("MSFT", prediction_type="weekly")
@@ -190,24 +195,24 @@ except BadRequest as exc:
 | 405         | `MethodNotAllowed`       | HTTP method not supported on endpoint |
 | 500         | `ServerError`            | FinBrain internal error               |
 
-----------
+---
 
 ## 🔄 Versioning & release
 
--   Semantic Versioning (`MAJOR.MINOR.PATCH`)
-    
--   Version auto-generated from Git tags (setuptools-scm)
+- Semantic Versioning (`MAJOR.MINOR.PATCH`)
 
-```
+- Version auto-generated from Git tags (setuptools-scm)
+
+```bash
 git tag -a 0.2.0 -m "Add options.chain endpoint"
 git push --tags # GitHub Actions builds & uploads to PyPI
 ```
 
-----------
+---
 
 ## 🧑‍💻 Development
 
-```
+```bash
 git clone https://github.com/finbrain-tech/finbrain-python
 cd finbrain-python
 python -m venv .venv && source .venv/bin/activate
@@ -221,35 +226,35 @@ pytest -q # unit tests (mocked)
 
 Set `FINBRAIN_LIVE_KEY`, then run:
 
-```
+```bash
 pytest -m integration
 ```
-----------
+
+---
 
 ## 🤝 Contributing
 
-1.  Fork → create a feature branch
-    
-2.  Add tests & run `ruff --fix`
-    
-3.  Ensure `pytest` & CI pass
-    
-4.  Open a PR — thanks!
-    
+1. Fork → create a feature branch
 
-----------
+2. Add tests & run `ruff --fix`
+
+3. Ensure `pytest` & CI pass
+
+4. Open a PR — thanks!
+
+---
 
 ## 🔒 Security
 
-Please report vulnerabilities to **info@finbrain.tech**.  
+Please report vulnerabilities to **<info@finbrain.tech>**.  
 We respond within 48 hours.
 
-----------
+---
 
 ## 📜 License
 
 MIT — see [LICENSE](LICENSE).
 
-----------
+---
 
 © 2025 FinBrain Technologies — Built with ❤️ for the quant community.

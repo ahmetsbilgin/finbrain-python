@@ -135,27 +135,6 @@ from finbrain import FinBrainClient
 fb = FinBrainClient(api_key="YOUR_KEY")
 ```
 
-### Async (currently under development)
-
-```python
-import asyncio, os
-from finbrain.aio import FinBrainAsyncClient async
-def main():
-    async with FinBrainAsyncClient(api_key=os.getenv("FINBRAIN_API_KEY")) as fb:
-        data = await fb.sentiments.ticker("S&P 500", "AMZN")
-        print(list(data["sentimentAnalysis"].items())[:3])
-
-asyncio.run(main())
-```
-
-### CLI (currently under development)
-
-```bash
-export FINBRAIN_API_KEY=your_key
-finbrain markets
-finbrain predict AAPL --type daily
-```
-
 ---
 
 ## 📚 Supported endpoints

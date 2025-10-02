@@ -222,7 +222,7 @@ except BadRequest as exc:
 - Version auto-generated from Git tags (setuptools-scm)
 
 ```bash
-git tag -a 0.2.0 -m "Add options.chain endpoint"
+git tag -a v0.2.0 -m "Add options.chain endpoint"
 git push --tags # GitHub Actions builds & uploads to PyPI
 ```
 

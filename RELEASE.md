@@ -1,26 +1,61 @@
 # Release Guide
 
+This guide explains how to create a new release for finbrain-python.
+
 ## Tag Convention
 
-Starting from the next release, we use **`v`-prefixed tags** (e.g., `v0.2.0`, `v1.0.0`).
+Starting from v0.1.6, we use **`v`-prefixed tags** (e.g., `v0.1.6`, `v0.2.0`, `v1.0.0`).
 
-### Creating a New Release
+## Release Process
 
-1. **Update version and create tag:**
+### 1. Update CHANGELOG.md
 
-   ```bash
-   git tag -a v0.2.0 -m "Release v0.2.0: Add async support"
-   git push origin v0.2.0
-   ```
+Edit `CHANGELOG.md` and move items from `[Unreleased]` to a new version section:
 
-2. **GitHub Actions will automatically:**
-   - Build the wheel and source distribution
-   - Upload to TestPyPI first
-   - Then upload to production PyPI
+```markdown
+## [0.1.6] - 2025-01-15
+### Added
+- Your new features
+### Changed
+- Your changes
+### Fixed
+- Your bug fixes
+```
 
-3. **setuptools-scm will:**
-   - Automatically strip the `v` prefix
-   - Tag `v0.2.0` → Package version `0.2.0`
+### 2. Create and Push Tag
+
+```bash
+git add CHANGELOG.md
+git commit -m "Release v0.1.6"
+git tag -a v0.1.6 -m "Release v0.1.6: Brief description"
+git push origin main
+git push origin v0.1.6
+```
+
+### 3. GitHub Actions (Automated)
+
+GitHub Actions will automatically:
+- Build the wheel and source distribution
+- Upload to TestPyPI first
+- Upload to production PyPI
+
+### 4. Create GitHub Release (Manual)
+
+1. Go to: https://github.com/ahmetsbilgin/finbrain-python/releases/new
+2. Select tag: `v0.1.6`
+3. Title: `v0.1.6 - Brief Description`
+4. Copy the relevant section from `CHANGELOG.md` into the description
+5. Click "Publish release"
+
+### 5. Verify
+
+- Check PyPI: https://pypi.org/project/finbrain-python/
+- Test installation: `pip install finbrain-python==0.1.6`
+
+## How setuptools-scm Works
+
+- Tag `v0.1.6` → Package version `0.1.6`
+- The `v` prefix is automatically stripped
 
 ### Previous Tag Convention
 

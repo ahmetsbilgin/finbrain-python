@@ -34,10 +34,15 @@ version_scheme = "release-branch-semver"   # defaults are fine; this is optional
 finbrain = ["py.typed"]
 
 [project.optional-dependencies]
+async = [
+    "httpx>=0.24",               # async HTTP client
+]
 dev = [
     "pytest",
-    "responses",                  # HTTP mocking
+    "pytest-asyncio",            # async test support
+    "responses",                 # HTTP mocking (sync)
+    "httpx>=0.24",               # for async tests
     "build",
     "twine",
-    "ruff",                       # linter/formatter (optional)
+    "ruff",                      # linter/formatter (optional)
 ]

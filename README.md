@@ -86,6 +86,45 @@ fb.sentiments.ticker("S&P 500", "AMZN",
                      as_dataframe=True)
 ```
 
+## ⚡ Async Usage
+
+For async/await support, install with the `async` extra:
+
+```bash
+pip install finbrain-python[async]
+```
+
+Then use `AsyncFinBrainClient` with `httpx`:
+
+```python
+import asyncio
+from finbrain.aio import AsyncFinBrainClient
+
+async def main():
+    async with AsyncFinBrainClient(api_key="YOUR_KEY") as fb:
+        # All methods are async and return the same data structures
+        markets = await fb.available.markets()
+
+        # Fetch predictions
+        predictions = await fb.predictions.ticker("AMZN", as_dataframe=True)
+
+        # Fetch sentiment data
+        sentiment = await fb.sentiments.ticker(
+            "S&P 500", "AMZN",
+            date_from="2025-01-01",
+            date_to="2025-06-30",
+            as_dataframe=True
+        )
+
+        # All other endpoints work the same way
+        app_ratings = await fb.app_ratings.ticker("S&P 500", "AMZN", as_dataframe=True)
+        analyst_ratings = await fb.analyst_ratings.ticker("S&P 500", "AMZN", as_dataframe=True)
+
+asyncio.run(main())
+```
+
+**Note**: The async client uses `httpx.AsyncClient` and must be used with `async with` context manager for proper resource cleanup.
+
 ## 📈 Plotting
 
 Plot helpers in a nutshell

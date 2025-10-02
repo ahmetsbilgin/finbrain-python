@@ -35,13 +35,14 @@ git push origin v0.1.6
 ### 3. GitHub Actions (Automated)
 
 GitHub Actions will automatically:
+
 - Build the wheel and source distribution
 - Upload to TestPyPI first
 - Upload to production PyPI
 
 ### 4. Create GitHub Release (Manual)
 
-1. Go to: https://github.com/ahmetsbilgin/finbrain-python/releases/new
+1. Go to: <https://github.com/ahmetsbilgin/finbrain-python/releases/new>
 2. Select tag: `v0.1.6`
 3. Title: `v0.1.6 - Brief Description`
 4. Copy the relevant section from `CHANGELOG.md` into the description
@@ -49,7 +50,7 @@ GitHub Actions will automatically:
 
 ### 5. Verify
 
-- Check PyPI: https://pypi.org/project/finbrain-python/
+- Check PyPI: <https://pypi.org/project/finbrain-python/>
 - Test installation: `pip install finbrain-python==0.1.6`
 
 ## How setuptools-scm Works

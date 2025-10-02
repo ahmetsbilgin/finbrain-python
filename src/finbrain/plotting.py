@@ -450,9 +450,363 @@ class _PlotNamespace:
         return fig.to_json() if as_json else fig
 
     # --------------------------------------------------------------------- #
-    # TODO: insider_transactions, house_trades, analyst_ratings ...         #
-    # Add more methods here following the same pattern.                     #
+    # Insider Transactions  → markers on price chart                        #
     # --------------------------------------------------------------------- #
+    def insider_transactions(
+        self,
+        market: str,
+        ticker: str,
+        price_data: pd.DataFrame,
+        *,
+        as_json: bool = False,
+        show: bool = True,
+        template: str = "plotly_dark",
+        **kwargs,
+    ):
+        """
+        Plot insider transactions overlaid on a price chart.
+
+        This method requires user-provided historical price data, as FinBrain
+        does not currently offer a price history endpoint.
+
+        Parameters
+        ----------
+        market : str
+            Market identifier (e.g. ``"S&P 500"``).
+        ticker : str
+            Ticker symbol (e.g. ``"AAPL"``).
+        price_data : pandas.DataFrame
+            **User-provided** price history with a DatetimeIndex and a column
+            containing prices (e.g. ``"close"``, ``"Close"``, or ``"price"``).
+            The index must be timezone-naive or UTC.
+        as_json : bool, default False
+            If ``True``, return JSON string instead of Figure object.
+        show : bool, default True
+            If ``True`` and ``as_json=False``, display the figure immediately.
+        template : str, default "plotly_dark"
+            Plotly template name.
+        **kwargs
+            Additional arguments passed to
+            :meth:`FinBrainClient.insider_transactions.ticker`.
+
+        Returns
+        -------
+        plotly.graph_objects.Figure or str or None
+            Figure object, JSON string, or None (when shown).
+
+        Raises
+        ------
+        ValueError
+            If ``price_data`` is empty or missing required price column.
+
+        Examples
+        --------
+        >>> import pandas as pd
+        >>> # User provides their own price data from any legal source
+        >>> price_df = pd.DataFrame({
+        ...     "close": [150, 152, 151, 155],
+        ...     "date": pd.date_range("2024-01-01", periods=4)
+        ... }).set_index("date")
+        >>> fb.plot.insider_transactions("S&P 500", "AAPL", price_df)
+        """
+        # Validate price_data
+        if price_data.empty:
+            raise ValueError("price_data cannot be empty")
+
+        # Flatten MultiIndex columns if present (e.g., from yf.download())
+        if isinstance(price_data.columns, pd.MultiIndex):
+            # Get the first level (price types like 'Close', 'Open', etc.)
+            price_data = price_data.copy()
+            price_data.columns = price_data.columns.get_level_values(0)
+
+        # Find price column (case-insensitive search)
+        price_col = None
+        for col in ["close", "Close", "price", "Price", "adj_close", "Adj Close"]:
+            if col in price_data.columns:
+                price_col = col
+                break
+        if price_col is None:
+            raise ValueError(
+                f"price_data must contain a price column (e.g. 'close', 'Close', 'price'). "
+                f"Found columns: {price_data.columns.tolist()}"
+            )
+
+        # Fetch insider transactions
+        transactions_df = self._fb.insider_transactions.ticker(
+            market, ticker, as_dataframe=True, **kwargs
+        )
+
+        fig = self._plot_transactions_on_price(
+            price_data=price_data,
+            price_col=price_col,
+            transactions_df=transactions_df,
+            ticker=ticker,
+            template=template,
+            transaction_type="Insider",
+        )
+
+        if show and not as_json:
+            fig.show()
+            return None
+        return fig.to_json() if as_json else fig
+
+    # --------------------------------------------------------------------- #
+    # House Trades  → markers on price chart                                #
+    # --------------------------------------------------------------------- #
+    def house_trades(
+        self,
+        market: str,
+        ticker: str,
+        price_data: pd.DataFrame,
+        *,
+        date_from: str | None = None,
+        date_to: str | None = None,
+        as_json: bool = False,
+        show: bool = True,
+        template: str = "plotly_dark",
+        **kwargs,
+    ):
+        """
+        Plot U.S. House member trades overlaid on a price chart.
+
+        This method requires user-provided historical price data, as FinBrain
+        does not currently offer a price history endpoint.
+
+        Parameters
+        ----------
+        market : str
+            Market identifier (e.g. ``"S&P 500"``).
+        ticker : str
+            Ticker symbol (e.g. ``"AAPL"``).
+        price_data : pandas.DataFrame
+            **User-provided** price history with a DatetimeIndex and a column
+            containing prices (e.g. ``"close"``, ``"Close"``, or ``"price"``).
+            The index must be timezone-naive or UTC.
+        date_from, date_to : str or None, optional
+            Date range for transactions in ``YYYY-MM-DD`` format.
+        as_json : bool, default False
+            If ``True``, return JSON string instead of Figure object.
+        show : bool, default True
+            If ``True`` and ``as_json=False``, display the figure immediately.
+        template : str, default "plotly_dark"
+            Plotly template name.
+        **kwargs
+            Additional arguments passed to
+            :meth:`FinBrainClient.house_trades.ticker`.
+
+        Returns
+        -------
+        plotly.graph_objects.Figure or str or None
+            Figure object, JSON string, or None (when shown).
+
+        Raises
+        ------
+        ValueError
+            If ``price_data`` is empty or missing required price column.
+
+        Examples
+        --------
+        >>> import pandas as pd
+        >>> # User provides their own price data from any legal source
+        >>> price_df = pd.DataFrame({
+        ...     "close": [150, 152, 151, 155],
+        ...     "date": pd.date_range("2024-01-01", periods=4)
+        ... }).set_index("date")
+        >>> fb.plot.house_trades("S&P 500", "AAPL", price_df,
+        ...                      date_from="2024-01-01", date_to="2024-12-31")
+        """
+        # Validate price_data
+        if price_data.empty:
+            raise ValueError("price_data cannot be empty")
+
+        # Flatten MultiIndex columns if present (e.g., from yf.download())
+        if isinstance(price_data.columns, pd.MultiIndex):
+            # Get the first level (price types like 'Close', 'Open', etc.)
+            price_data = price_data.copy()
+            price_data.columns = price_data.columns.get_level_values(0)
+
+        # Find price column (case-insensitive search)
+        price_col = None
+        for col in ["close", "Close", "price", "Price", "adj_close", "Adj Close"]:
+            if col in price_data.columns:
+                price_col = col
+                break
+        if price_col is None:
+            raise ValueError(
+                f"price_data must contain a price column (e.g. 'close', 'Close', 'price'). "
+                f"Found columns: {price_data.columns.tolist()}"
+            )
+
+        # Fetch house trades
+        transactions_df = self._fb.house_trades.ticker(
+            market,
+            ticker,
+            date_from=date_from,
+            date_to=date_to,
+            as_dataframe=True,
+            **kwargs,
+        )
+
+        fig = self._plot_transactions_on_price(
+            price_data=price_data,
+            price_col=price_col,
+            transactions_df=transactions_df,
+            ticker=ticker,
+            template=template,
+            transaction_type="House",
+        )
+
+        if show and not as_json:
+            fig.show()
+            return None
+        return fig.to_json() if as_json else fig
+
+    # --------------------------------------------------------------------- #
+    # Helper methods                                                         #
+    # --------------------------------------------------------------------- #
+
+    @staticmethod
+    def _plot_transactions_on_price(
+        price_data: pd.DataFrame,
+        price_col: str,
+        transactions_df: pd.DataFrame,
+        ticker: str,
+        template: str,
+        transaction_type: str,
+    ) -> go.Figure:
+        """
+        Helper to plot transaction markers on a price chart.
+
+        Parameters
+        ----------
+        price_data : pd.DataFrame
+            Price history with DatetimeIndex.
+        price_col : str
+            Name of the price column in price_data.
+        transactions_df : pd.DataFrame
+            Transaction data with DatetimeIndex and either 'transaction' (insider)
+            or 'type' (house) column.
+        ticker : str
+            Ticker symbol for title.
+        template : str
+            Plotly template.
+        transaction_type : str
+            "Insider" or "House" for labeling.
+
+        Returns
+        -------
+        go.Figure
+        """
+        # Normalize timezones - convert both to timezone-naive for comparison
+        # yfinance often returns timezone-aware data, FinBrain returns naive
+        price_data_normalized = price_data.copy()
+        if price_data_normalized.index.tz is not None:
+            price_data_normalized.index = price_data_normalized.index.tz_localize(None)
+
+        transactions_df_normalized = transactions_df.copy()
+        if transactions_df_normalized.index.tz is not None:
+            transactions_df_normalized.index = (
+                transactions_df_normalized.index.tz_localize(None)
+            )
+
+        fig = go.Figure(
+            layout=dict(
+                template=template,
+                title=f"{transaction_type} Transactions · {ticker}",
+                xaxis_title="Date",
+                yaxis_title="Price",
+                hovermode="x unified",
+            )
+        )
+
+        # Plot price line
+        fig.add_scatter(
+            name="Price",
+            x=price_data_normalized.index,
+            y=price_data_normalized[price_col],
+            mode="lines",
+            line=dict(width=2, color="#02d2ff"),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>Price: $%{y:.2f}<extra></extra>",
+        )
+
+        if transactions_df_normalized.empty:
+            # No transactions to plot
+            return fig
+
+        # Determine which column contains transaction type
+        # Insider transactions use 'transaction', house trades use 'type'
+        tx_col = (
+            "transaction"
+            if "transaction" in transactions_df_normalized.columns
+            else "type"
+        )
+
+        # Separate buy and sell transactions
+        buys = transactions_df_normalized[
+            transactions_df_normalized[tx_col].str.contains(
+                "Buy|Purchase", case=False, na=False
+            )
+        ]
+        sells = transactions_df_normalized[
+            transactions_df_normalized[tx_col].str.contains(
+                "Sell|Sale", case=False, na=False
+            )
+        ]
+
+        # For each transaction, find the closest price date
+        def get_price_at_date(tx_date):
+            """Find closest available price for a transaction date."""
+            if tx_date in price_data_normalized.index:
+                return price_data_normalized.loc[tx_date, price_col]
+            # Find nearest date
+            idx = price_data_normalized.index.get_indexer([tx_date], method="nearest")[
+                0
+            ]
+            if idx >= 0 and idx < len(price_data_normalized):
+                return price_data_normalized.iloc[idx][price_col]
+            return None
+
+        # Plot buy markers
+        if not buys.empty:
+            buy_prices = [get_price_at_date(dt) for dt in buys.index]
+            # Filter out None values
+            valid_buys = [
+                (dt, p) for dt, p in zip(buys.index, buy_prices) if p is not None
+            ]
+            if valid_buys:
+                buy_dates, buy_vals = zip(*valid_buys)
+                fig.add_scatter(
+                    name="Buy",
+                    x=buy_dates,
+                    y=buy_vals,
+                    mode="markers",
+                    marker=dict(
+                        size=10, color="rgba(0,255,0,0.8)", symbol="triangle-up"
+                    ),
+                    hovertemplate="<b>%{x|%Y-%m-%d}</b><br>BUY<extra></extra>",
+                )
+
+        # Plot sell markers
+        if not sells.empty:
+            sell_prices = [get_price_at_date(dt) for dt in sells.index]
+            # Filter out None values
+            valid_sells = [
+                (dt, p) for dt, p in zip(sells.index, sell_prices) if p is not None
+            ]
+            if valid_sells:
+                sell_dates, sell_vals = zip(*valid_sells)
+                fig.add_scatter(
+                    name="Sell",
+                    x=sell_dates,
+                    y=sell_vals,
+                    mode="markers",
+                    marker=dict(
+                        size=10, color="rgba(255,0,0,0.8)", symbol="triangle-down"
+                    ),
+                    hovertemplate="<b>%{x|%Y-%m-%d}</b><br>SELL<extra></extra>",
+                )
+
+        return fig
 
     @staticmethod
     def _plot_put_call(df, ticker, template):

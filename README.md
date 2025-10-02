@@ -158,7 +158,35 @@ fb.plot.predictions("AMZN")         # prediction_type="monthly" for monthly pred
 fb.plot.sentiments("S&P 500", "AMZN",
                    date_from="2025-01-01",
                    date_to="2025-06-30")
+
+# ---------- Insider Transactions & House Trades (requires user price data) ----------
+# These plots overlay transaction markers on a price chart.
+# Since FinBrain doesn't provide historical prices, you must provide your own:
+
+import pandas as pd
+
+# Example: Load your price data from any legal source
+# (broker API, licensed data provider, CSV file, etc.)
+price_df = pd.DataFrame({
+    "close": [150.25, 151.30, 149.80],  # Your price data
+    "date": pd.date_range("2025-01-01", periods=3)
+}).set_index("date")
+
+# Plot insider transactions on your price chart
+fb.plot.insider_transactions("S&P 500", "AAPL", price_data=price_df)
+
+# Plot House member trades on your price chart
+fb.plot.house_trades("S&P 500", "NVDA",
+                     price_data=price_df,
+                     date_from="2025-01-01",
+                     date_to="2025-06-30")
 ```
+
+**Price Data Requirements:**
+
+- DataFrame with DatetimeIndex
+- Must contain a price column: `close`, `Close`, `price`, `Price`, `adj_close`, or `Adj Close`
+- Obtain from legal sources: broker API, Bloomberg, Alpha Vantage, FMP, etc.
 
 ## 🔑 Authentication
 

@@ -362,6 +362,8 @@ class _PlotNamespace:
                 **kw,
             )
             fig = self._plot_put_call(df, ticker, template)  # helper below
+        else:
+            raise ValueError(f"Unknown kind '{kind}'. Supported values: 'put_call'")
 
         if show and not as_json:
             fig.show()

@@ -4,6 +4,8 @@ import datetime as _dt
 from urllib.parse import quote
 from typing import TYPE_CHECKING, Dict, Any, List
 
+from ._utils import to_datestr
+
 if TYPE_CHECKING:  # imported only by type-checkers
     from ..client import FinBrainClient
 
@@ -56,9 +58,9 @@ class AnalystRatingsAPI:
         params: Dict[str, str] = {}
 
         if date_from:
-            params["dateFrom"] = _to_datestr(date_from)
+            params["dateFrom"] = to_datestr(date_from)
         if date_to:
-            params["dateTo"] = _to_datestr(date_to)
+            params["dateTo"] = to_datestr(date_to)
 
         market_slug = quote(market, safe="")
         path = f"analystratings/{market_slug}/{symbol.upper()}"
@@ -73,11 +75,3 @@ class AnalystRatingsAPI:
             return df
 
         return data
-
-
-# ---------------------------------------------------------------------- #
-# helper                                                                 #
-# ---------------------------------------------------------------------- #
-def _to_datestr(value: _dt.date | str) -> str:
-    """Convert ``datetime.date`` → ``YYYY-MM-DD``; pass strings through untouched."""
-    return value.isoformat() if isinstance(value, _dt.date) else value

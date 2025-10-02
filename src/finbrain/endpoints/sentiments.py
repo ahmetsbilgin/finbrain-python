@@ -4,6 +4,8 @@ import datetime as _dt
 from urllib.parse import quote
 from typing import TYPE_CHECKING, Dict, Any
 
+from ._utils import to_datestr
+
 if TYPE_CHECKING:  # imported only by static type-checkers
     from ..client import FinBrainClient
 
@@ -75,9 +77,9 @@ class SentimentsAPI:
         params: Dict[str, str] = {}
 
         if date_from:
-            params["dateFrom"] = _to_datestr(date_from)
+            params["dateFrom"] = to_datestr(date_from)
         if date_to:
-            params["dateTo"] = _to_datestr(date_to)
+            params["dateTo"] = to_datestr(date_to)
         if days is not None and "dateFrom" not in params and "dateTo" not in params:
             params["days"] = str(days)
 
@@ -98,11 +100,3 @@ class SentimentsAPI:
             return df
 
         return data
-
-
-# ------------------------------------------------------------------------- #
-# Helpers                                                                   #
-# ------------------------------------------------------------------------- #
-def _to_datestr(value: _dt.date | str) -> str:
-    """Convert ``datetime.date`` → 'YYYY-MM-DD' but pass strings through."""
-    return value.isoformat() if isinstance(value, _dt.date) else value

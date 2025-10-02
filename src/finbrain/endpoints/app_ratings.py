@@ -5,6 +5,8 @@ import pandas as pd
 from urllib.parse import quote
 from typing import TYPE_CHECKING, Dict, Any, List
 
+from ._utils import to_datestr
+
 if TYPE_CHECKING:  # imported only by static-type tools
     from ..client import FinBrainClient
 
@@ -73,9 +75,9 @@ class AppRatingsAPI:
         params: Dict[str, str] = {}
 
         if date_from:
-            params["dateFrom"] = _to_datestr(date_from)
+            params["dateFrom"] = to_datestr(date_from)
         if date_to:
-            params["dateTo"] = _to_datestr(date_to)
+            params["dateTo"] = to_datestr(date_to)
 
         market_slug = quote(market, safe="")
         path = f"appratings/{market_slug}/{symbol.upper()}"
@@ -90,13 +92,3 @@ class AppRatingsAPI:
             return df
 
         return data
-
-
-# ---------------------------------------------------------------------- #
-# helper                                                                 #
-# ---------------------------------------------------------------------- #
-def _to_datestr(value: _dt.date | str) -> str:
-    """Convert :pyclass:`~datetime.date` → ``YYYY-MM-DD`` but pass strings."""
-    if isinstance(value, _dt.date):
-        return value.isoformat()
-    return value

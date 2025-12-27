@@ -16,6 +16,7 @@ from .endpoints.sentiments import SentimentsAPI
 from .endpoints.app_ratings import AppRatingsAPI
 from .endpoints.analyst_ratings import AnalystRatingsAPI
 from .endpoints.house_trades import HouseTradesAPI
+from .endpoints.senate_trades import SenateTradesAPI
 from .endpoints.insider_transactions import InsiderTransactionsAPI
 from .endpoints.linkedin_data import LinkedInDataAPI
 from .endpoints.options import OptionsAPI
@@ -63,6 +64,7 @@ class FinBrainClient:
         self.app_ratings = AppRatingsAPI(self)
         self.analyst_ratings = AnalystRatingsAPI(self)
         self.house_trades = HouseTradesAPI(self)
+        self.senate_trades = SenateTradesAPI(self)
         self.insider_transactions = InsiderTransactionsAPI(self)
         self.linkedin_data = LinkedInDataAPI(self)
         self.options = OptionsAPI(self)

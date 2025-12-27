@@ -662,6 +662,117 @@ class _PlotNamespace:
         return fig.to_json() if as_json else fig
 
     # --------------------------------------------------------------------- #
+    # Senate Trades  → markers on price chart                               #
+    # --------------------------------------------------------------------- #
+    def senate_trades(
+        self,
+        market: str,
+        ticker: str,
+        price_data: pd.DataFrame,
+        *,
+        date_from: str | None = None,
+        date_to: str | None = None,
+        as_json: bool = False,
+        show: bool = True,
+        template: str = "plotly_dark",
+        **kwargs,
+    ):
+        """
+        Plot U.S. Senate member trades overlaid on a price chart.
+
+        This method requires user-provided historical price data, as FinBrain
+        does not currently offer a price history endpoint.
+
+        Parameters
+        ----------
+        market : str
+            Market identifier (e.g. ``"NASDAQ"``).
+        ticker : str
+            Ticker symbol (e.g. ``"META"``).
+        price_data : pandas.DataFrame
+            **User-provided** price history with a DatetimeIndex and a column
+            containing prices (e.g. ``"close"``, ``"Close"``, or ``"price"``).
+            The index must be timezone-naive or UTC.
+        date_from, date_to : str or None, optional
+            Date range for transactions in ``YYYY-MM-DD`` format.
+        as_json : bool, default False
+            If ``True``, return JSON string instead of Figure object.
+        show : bool, default True
+            If ``True`` and ``as_json=False``, display the figure immediately.
+        template : str, default "plotly_dark"
+            Plotly template name.
+        **kwargs
+            Additional arguments passed to
+            :meth:`FinBrainClient.senate_trades.ticker`.
+
+        Returns
+        -------
+        plotly.graph_objects.Figure or str or None
+            Figure object, JSON string, or None (when shown).
+
+        Raises
+        ------
+        ValueError
+            If ``price_data`` is empty or missing required price column.
+
+        Examples
+        --------
+        >>> import pandas as pd
+        >>> # User provides their own price data from any legal source
+        >>> price_df = pd.DataFrame({
+        ...     "close": [500, 510, 505, 520],
+        ...     "date": pd.date_range("2024-01-01", periods=4)
+        ... }).set_index("date")
+        >>> fb.plot.senate_trades("NASDAQ", "META", price_df,
+        ...                       date_from="2024-01-01", date_to="2024-12-31")
+        """
+        # Validate price_data
+        if price_data.empty:
+            raise ValueError("price_data cannot be empty")
+
+        # Flatten MultiIndex columns if present (e.g., from yf.download())
+        if isinstance(price_data.columns, pd.MultiIndex):
+            # Get the first level (price types like 'Close', 'Open', etc.)
+            price_data = price_data.copy()
+            price_data.columns = price_data.columns.get_level_values(0)
+
+        # Find price column (case-insensitive search)
+        price_col = None
+        for col in ["close", "Close", "price", "Price", "adj_close", "Adj Close"]:
+            if col in price_data.columns:
+                price_col = col
+                break
+        if price_col is None:
+            raise ValueError(
+                f"price_data must contain a price column (e.g. 'close', 'Close', 'price'). "
+                f"Found columns: {price_data.columns.tolist()}"
+            )
+
+        # Fetch senate trades
+        transactions_df = self._fb.senate_trades.ticker(
+            market,
+            ticker,
+            date_from=date_from,
+            date_to=date_to,
+            as_dataframe=True,
+            **kwargs,
+        )
+
+        fig = self._plot_transactions_on_price(
+            price_data=price_data,
+            price_col=price_col,
+            transactions_df=transactions_df,
+            ticker=ticker,
+            template=template,
+            transaction_type="Senate",
+        )
+
+        if show and not as_json:
+            fig.show()
+            return None
+        return fig.to_json() if as_json else fig
+
+    # --------------------------------------------------------------------- #
     # Helper methods                                                         #
     # --------------------------------------------------------------------- #
 

@@ -67,6 +67,7 @@ async def test_async_endpoints_exist():
         assert hasattr(client, "app_ratings")
         assert hasattr(client, "analyst_ratings")
         assert hasattr(client, "house_trades")
+        assert hasattr(client, "senate_trades")
         assert hasattr(client, "insider_transactions")
         assert hasattr(client, "linkedin_data")
         assert hasattr(client, "options")

@@ -60,6 +60,12 @@ fb.house_trades.ticker("S&P 500", "AMZN",
                        date_to="2025-06-30",
                        as_dataframe=True)
 
+# ---------- senate trades ----------
+fb.senate_trades.ticker("NASDAQ", "META",
+                        date_from="2025-01-01",
+                        date_to="2025-06-30",
+                        as_dataframe=True)
+
 # ---------- insider transactions ----------
 fb.insider_transactions.ticker("S&P 500", "AMZN", as_dataframe=True)
 
@@ -159,7 +165,7 @@ fb.plot.sentiments("S&P 500", "AMZN",
                    date_from="2025-01-01",
                    date_to="2025-06-30")
 
-# ---------- Insider Transactions & House Trades (requires user price data) ----------
+# ---------- Insider Transactions, House & Senate Trades (requires user price data) ----------
 # These plots overlay transaction markers on a price chart.
 # Since FinBrain doesn't provide historical prices, you must provide your own:
 
@@ -180,6 +186,12 @@ fb.plot.house_trades("S&P 500", "NVDA",
                      price_data=price_df,
                      date_from="2025-01-01",
                      date_to="2025-06-30")
+
+# Plot Senate member trades on your price chart
+fb.plot.senate_trades("NASDAQ", "META",
+                      price_data=price_df,
+                      date_from="2025-01-01",
+                      date_to="2025-06-30")
 ```
 
 **Price Data Requirements:**
@@ -216,6 +228,7 @@ fb = FinBrainClient(api_key="YOUR_KEY")
 | App ratings          | `client.app_ratings.ticker()`            | `/appratings/{MARKET}/{TICKER}`                      |
 | Analyst ratings      | `client.analyst_ratings.ticker()`        | `/analystratings/{MARKET}/{TICKER}`                  |
 | House trades         | `client.house_trades.ticker()`           | `/housetrades/{MARKET}/{TICKER}`                     |
+| Senate trades        | `client.senate_trades.ticker()`          | `/senatetrades/{MARKET}/{TICKER}`                    |
 | Insider transactions | `client.insider_transactions.ticker()`   | `/insidertransactions/{MARKET}/{TICKER}`             |
 | LinkedIn             | `client.linkedin_data.ticker()`          | `/linkedindata/{MARKET}/{TICKER}`                    |
 | Options – Put/Call   | `client.options.put_call()`              | `/putcalldata/{MARKET}/{TICKER}`                     |

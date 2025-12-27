@@ -15,6 +15,7 @@ from .endpoints.sentiments import AsyncSentimentsAPI
 from .endpoints.app_ratings import AsyncAppRatingsAPI
 from .endpoints.analyst_ratings import AsyncAnalystRatingsAPI
 from .endpoints.house_trades import AsyncHouseTradesAPI
+from .endpoints.senate_trades import AsyncSenateTradesAPI
 from .endpoints.insider_transactions import AsyncInsiderTransactionsAPI
 from .endpoints.linkedin_data import AsyncLinkedInDataAPI
 from .endpoints.options import AsyncOptionsAPI
@@ -68,6 +69,7 @@ class AsyncFinBrainClient:
         self.app_ratings = AsyncAppRatingsAPI(self)
         self.analyst_ratings = AsyncAnalystRatingsAPI(self)
         self.house_trades = AsyncHouseTradesAPI(self)
+        self.senate_trades = AsyncSenateTradesAPI(self)
         self.insider_transactions = AsyncInsiderTransactionsAPI(self)
         self.linkedin_data = AsyncLinkedInDataAPI(self)
         self.options = AsyncOptionsAPI(self)

@@ -4,8 +4,8 @@
 [![CI](https://github.com/ahmetsbilgin/finbrain-python/actions/workflows/ci.yml/badge.svg)](https://github.com/ahmetsbilgin/finbrain-python/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
 
-**Official Python client** for the [FinBrain API](https://docs.finbrain.tech).  
-Fetch deep-learning price predictions, sentiment scores, insider trades, LinkedIn metrics, options data and more — with a single import.
+**Official Python client** for the [FinBrain API v2](https://docs.finbrain.tech).
+Fetch deep-learning price predictions, sentiment scores, insider trades, LinkedIn metrics, options data, news and more — with a single import.
 
 *Python ≥ 3.9  •  requests, pandas, numpy & plotly  •  asyncio optional.*
 
@@ -13,11 +13,11 @@ Fetch deep-learning price predictions, sentiment scores, insider trades, LinkedI
 
 ## ✨ Features
 
-- One-line auth (`FinBrainClient(api_key="…")`)
-- Complete endpoint coverage (predictions, sentiments, options, insider, etc.)
+- One-line auth (`FinBrainClient(api_key="…")`) with Bearer token
+- Complete v2 endpoint coverage (predictions, sentiments, options, insider, news, screener, etc.)
 - Transparent retries & custom error hierarchy (`FinBrainError`)
+- Response envelope auto-unwrapping (v2 `{success, data, meta}` format)
 - Async parity with `finbrain.aio` (`httpx`)
-- CLI (`finbrain markets`, `finbrain predict AAPL`)
 - Auto-version from Git tags (setuptools-scm)
 - MIT-licensed, fully unit-tested
 
@@ -38,58 +38,70 @@ from finbrain import FinBrainClient
 
 fb = FinBrainClient(api_key="YOUR_KEY")        # create once, reuse below
 
-# ---------- availability ----------
-fb.available.markets()                         # list markets
+# ---------- discovery ----------
+fb.available.markets()                         # list markets with regions
 fb.available.tickers("daily", as_dataframe=True)
+fb.available.regions()                         # markets grouped by region
 
 # ---------- app ratings ----------
-fb.app_ratings.ticker("S&P 500", "AMZN",
+fb.app_ratings.ticker("AMZN",
                       date_from="2025-01-01",
                       date_to="2025-06-30",
                       as_dataframe=True)
 
 # ---------- analyst ratings ----------
-fb.analyst_ratings.ticker("S&P 500", "AMZN",
+fb.analyst_ratings.ticker("AMZN",
                           date_from="2025-01-01",
                           date_to="2025-06-30",
                           as_dataframe=True)
 
 # ---------- house trades ----------
-fb.house_trades.ticker("S&P 500", "AMZN",
+fb.house_trades.ticker("AMZN",
                        date_from="2025-01-01",
                        date_to="2025-06-30",
                        as_dataframe=True)
 
 # ---------- senate trades ----------
-fb.senate_trades.ticker("NASDAQ", "META",
+fb.senate_trades.ticker("META",
                         date_from="2025-01-01",
                         date_to="2025-06-30",
                         as_dataframe=True)
 
 # ---------- insider transactions ----------
-fb.insider_transactions.ticker("S&P 500", "AMZN", as_dataframe=True)
+fb.insider_transactions.ticker("AMZN", as_dataframe=True)
 
 # ---------- LinkedIn metrics ----------
-fb.linkedin_data.ticker("S&P 500", "AMZN",
+fb.linkedin_data.ticker("AMZN",
                         date_from="2025-01-01",
                         date_to="2025-06-30",
                         as_dataframe=True)
 
 # ---------- options put/call ----------
-fb.options.put_call("S&P 500", "AMZN",
+fb.options.put_call("AMZN",
                     date_from="2025-01-01",
                     date_to="2025-06-30",
                     as_dataframe=True)
 
 # ---------- price predictions ----------
-fb.predictions.market("S&P 500", as_dataframe=True)   # all tickers in market
-fb.predictions.ticker("AMZN", as_dataframe=True)      # single ticker
+fb.predictions.ticker("AMZN", as_dataframe=True)
 
 # ---------- news sentiment ----------
-fb.sentiments.ticker("S&P 500", "AMZN",
+fb.sentiments.ticker("AMZN",
                      date_from="2025-01-01",
                      date_to="2025-06-30",
                      as_dataframe=True)
+
+# ---------- news articles ----------
+fb.news.ticker("AMZN", limit=20, as_dataframe=True)
+
+# ---------- screener (cross-ticker) ----------
+fb.screener.sentiment(market="S&P 500", as_dataframe=True)
+fb.screener.predictions_daily(limit=100, as_dataframe=True)
+fb.screener.insider_trading(limit=50)
+
+# ---------- recent data ----------
+fb.recent.news(limit=100, as_dataframe=True)
+fb.recent.analyst_ratings(limit=50)
 ```
 
 ## ⚡ Async Usage
@@ -116,15 +128,17 @@ async def main():
 
         # Fetch sentiment data
         sentiment = await fb.sentiments.ticker(
-            "S&P 500", "AMZN",
+            "AMZN",
             date_from="2025-01-01",
             date_to="2025-06-30",
             as_dataframe=True
         )
 
         # All other endpoints work the same way
-        app_ratings = await fb.app_ratings.ticker("S&P 500", "AMZN", as_dataframe=True)
-        analyst_ratings = await fb.analyst_ratings.ticker("S&P 500", "AMZN", as_dataframe=True)
+        app_ratings = await fb.app_ratings.ticker("AMZN", as_dataframe=True)
+        analyst_ratings = await fb.analyst_ratings.ticker("AMZN", as_dataframe=True)
+        news = await fb.news.ticker("AMZN", limit=10)
+        screener = await fb.screener.sentiment(market="S&P 500")
 
 asyncio.run(main())
 ```
@@ -141,18 +155,18 @@ Plot helpers in a nutshell
 
 ```python
 # ---------- App Ratings Chart - Apple App Store or Google Play Store ----------
-fb.plot.app_ratings("S&P 500", "AMZN",
+fb.plot.app_ratings("AMZN",
                     store="app",                # "play" for Google Play Store
                     date_from="2025-01-01",
                     date_to="2025-06-30")
 
 # ---------- LinkedIn Metrics Chart ----------
-fb.plot.linkedin("S&P 500", "AMZN",
+fb.plot.linkedin("AMZN",
                  date_from="2025-01-01",
                  date_to="2025-06-30")
 
 # ---------- Put-Call Ratio Chart ----------
-fb.plot.options("S&P 500", "AMZN",
+fb.plot.options("AMZN",
                 kind="put_call",
                 date_from="2025-01-01",
                 date_to="2025-06-30")
@@ -161,7 +175,7 @@ fb.plot.options("S&P 500", "AMZN",
 fb.plot.predictions("AMZN")         # prediction_type="monthly" for monthly predictions
 
 # ---------- Sentiments Chart ----------
-fb.plot.sentiments("S&P 500", "AMZN",
+fb.plot.sentiments("AMZN",
                    date_from="2025-01-01",
                    date_to="2025-06-30")
 
@@ -179,16 +193,16 @@ price_df = pd.DataFrame({
 }).set_index("date")
 
 # Plot insider transactions on your price chart
-fb.plot.insider_transactions("S&P 500", "AAPL", price_data=price_df)
+fb.plot.insider_transactions("AAPL", price_data=price_df)
 
 # Plot House member trades on your price chart
-fb.plot.house_trades("S&P 500", "NVDA",
+fb.plot.house_trades("NVDA",
                      price_data=price_df,
                      date_from="2025-01-01",
                      date_to="2025-06-30")
 
 # Plot Senate member trades on your price chart
-fb.plot.senate_trades("NASDAQ", "META",
+fb.plot.senate_trades("META",
                       price_data=price_df,
                       date_from="2025-01-01",
                       date_to="2025-06-30")
@@ -202,7 +216,7 @@ fb.plot.senate_trades("NASDAQ", "META",
 
 ## 🔑 Authentication
 
-To call the API you need an **API key**, obtained by purchasing a **FinBrain API subscription**.  
+To call the API you need an **API key**, obtained by purchasing a **FinBrain API subscription**.
 *(The Terminal-only subscription does **not** include an API key.)*
 
 1. Subscribe at <https://www.finbrain.tech> → FinBrain API.
@@ -214,24 +228,37 @@ from finbrain import FinBrainClient
 fb = FinBrainClient(api_key="YOUR_KEY")
 ```
 
+Or set the `FINBRAIN_API_KEY` environment variable and omit the argument:
+
+```python
+fb = FinBrainClient()  # reads from FINBRAIN_API_KEY env var
+```
+
 ---
 
 ## 📚 Supported endpoints
 
-| Category             | Method                                   | Path                                                 |
-|----------------------|------------------------------------------|------------------------------------------------------|
-| Availability         | `client.available.markets()`             | `/available/markets`                                 |
-|                      | `client.available.tickers()`             | `/available/tickers/{TYPE}`                          |
-| Predictions          | `client.predictions.ticker()`            | `/ticker/{TICKER}/predictions/{daily\|monthly}`      |
-|                      | `client.predictions.market()`            | `/market/{MARKET}/predictions/{daily\|monthly}`      |
-| Sentiments           | `client.sentiments.ticker()`             | `/sentiments/{MARKET}/{TICKER}`                      |
-| App ratings          | `client.app_ratings.ticker()`            | `/appratings/{MARKET}/{TICKER}`                      |
-| Analyst ratings      | `client.analyst_ratings.ticker()`        | `/analystratings/{MARKET}/{TICKER}`                  |
-| House trades         | `client.house_trades.ticker()`           | `/housetrades/{MARKET}/{TICKER}`                     |
-| Senate trades        | `client.senate_trades.ticker()`          | `/senatetrades/{MARKET}/{TICKER}`                    |
-| Insider transactions | `client.insider_transactions.ticker()`   | `/insidertransactions/{MARKET}/{TICKER}`             |
-| LinkedIn             | `client.linkedin_data.ticker()`          | `/linkedindata/{MARKET}/{TICKER}`                    |
-| Options – Put/Call   | `client.options.put_call()`              | `/putcalldata/{MARKET}/{TICKER}`                     |
+| Category             | Method                                   | v2 Path                                     |
+|----------------------|------------------------------------------|---------------------------------------------|
+| Discovery            | `client.available.markets()`             | `/markets`                                  |
+|                      | `client.available.tickers()`             | `/tickers`                                  |
+|                      | `client.available.regions()`             | `/regions`                                  |
+| Predictions          | `client.predictions.ticker()`            | `/predictions/{daily\|monthly}/{SYMBOL}`    |
+| Sentiments           | `client.sentiments.ticker()`             | `/sentiment/{SYMBOL}`                       |
+| News                 | `client.news.ticker()`                   | `/news/{SYMBOL}`                            |
+| App ratings          | `client.app_ratings.ticker()`            | `/app-ratings/{SYMBOL}`                     |
+| Analyst ratings      | `client.analyst_ratings.ticker()`        | `/analyst-ratings/{SYMBOL}`                 |
+| House trades         | `client.house_trades.ticker()`           | `/congress/house/{SYMBOL}`                  |
+| Senate trades        | `client.senate_trades.ticker()`          | `/congress/senate/{SYMBOL}`                 |
+| Insider transactions | `client.insider_transactions.ticker()`   | `/insider-trading/{SYMBOL}`                 |
+| LinkedIn             | `client.linkedin_data.ticker()`          | `/linkedin/{SYMBOL}`                        |
+| Options – Put/Call   | `client.options.put_call()`              | `/put-call-ratio/{SYMBOL}`                  |
+| Screener             | `client.screener.sentiment()`            | `/screener/sentiment`                       |
+|                      | `client.screener.predictions_daily()`    | `/screener/predictions/daily`               |
+|                      | `client.screener.insider_trading()`      | `/screener/insider-trading`                 |
+|                      | ... and 8 more screener methods          |                                             |
+| Recent               | `client.recent.news()`                   | `/recent/news`                              |
+|                      | `client.recent.analyst_ratings()`        | `/recent/analyst-ratings`                   |
 
 ---
 
@@ -243,6 +270,8 @@ try:
     fb.predictions.ticker("MSFT", prediction_type="weekly")
 except BadRequest as exc:
     print("Invalid parameters:", exc)
+    print("Error code:", exc.error_code)        # e.g. "VALIDATION_ERROR"
+    print("Details:", exc.error_details)         # structured details dict
 ```
 
 | HTTP status | Exception class          | Meaning                               |
@@ -252,6 +281,7 @@ except BadRequest as exc:
 | 403         | `PermissionDenied`       | Authenticated, but not authorised     |
 | 404         | `NotFound`               | Resource or endpoint not found        |
 | 405         | `MethodNotAllowed`       | HTTP method not supported on endpoint |
+| 429         | `RateLimitError`         | Too many requests                     |
 | 500         | `ServerError`            | FinBrain internal error               |
 
 ---
@@ -263,7 +293,7 @@ except BadRequest as exc:
 - Version auto-generated from Git tags (setuptools-scm)
 
 ```bash
-git tag -a v0.2.0 -m "Add options.chain endpoint"
+git tag -a v0.2.0 -m "v2 API migration"
 git push --tags # GitHub Actions builds & uploads to PyPI
 ```
 
@@ -278,15 +308,7 @@ python -m venv .venv && source .venv/bin/activate
 pip install -e .[dev]
 
 ruff check . # lint / format
-pytest -q # unit tests (mocked) 
-```
-
-### Live integration test(currently under development)
-
-Set `FINBRAIN_LIVE_KEY`, then run:
-
-```bash
-pytest -m integration
+pytest -q # unit tests (mocked)
 ```
 
 ---
@@ -295,7 +317,7 @@ pytest -m integration
 
 1. Fork → create a feature branch
 
-2. Add tests & run `ruff --fix`
+2. Add tests & run `ruff check --fix`
 
 3. Ensure `pytest` & CI pass
 
@@ -305,7 +327,7 @@ pytest -m integration
 
 ## 🔒 Security
 
-Please report vulnerabilities to **<info@finbrain.tech>**.  
+Please report vulnerabilities to **<info@finbrain.tech>**.
 We respond within 48 hours.
 
 ---

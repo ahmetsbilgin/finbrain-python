@@ -19,6 +19,9 @@ from .endpoints.senate_trades import AsyncSenateTradesAPI
 from .endpoints.insider_transactions import AsyncInsiderTransactionsAPI
 from .endpoints.linkedin_data import AsyncLinkedInDataAPI
 from .endpoints.options import AsyncOptionsAPI
+from .endpoints.news import AsyncNewsAPI
+from .endpoints.screener import AsyncScreenerAPI
+from .endpoints.recent import AsyncRecentAPI
 
 
 # Which status codes merit a retry
@@ -29,7 +32,7 @@ _BACKOFF_BASE = 2
 
 class AsyncFinBrainClient:
     """
-    Async wrapper around the FinBrain REST API using httpx.
+    Async wrapper around the FinBrain REST API (v2) using httpx.
 
     Example
     -------
@@ -44,7 +47,7 @@ class AsyncFinBrainClient:
     >>> asyncio.run(main())
     """
 
-    DEFAULT_BASE_URL = "https://api.finbrain.tech/v1/"
+    DEFAULT_BASE_URL = "https://api.finbrain.tech/v2/"
 
     def __init__(
         self,
@@ -61,6 +64,7 @@ class AsyncFinBrainClient:
         self._client: Optional[httpx.AsyncClient] = None
         self.timeout = timeout
         self.retries = retries
+        self.last_meta: dict | None = None
 
         # wire endpoint helpers
         self.available = AsyncAvailableAPI(self)
@@ -73,11 +77,17 @@ class AsyncFinBrainClient:
         self.insider_transactions = AsyncInsiderTransactionsAPI(self)
         self.linkedin_data = AsyncLinkedInDataAPI(self)
         self.options = AsyncOptionsAPI(self)
+        self.news = AsyncNewsAPI(self)
+        self.screener = AsyncScreenerAPI(self)
+        self.recent = AsyncRecentAPI(self)
 
     async def __aenter__(self) -> "AsyncFinBrainClient":
         """Context manager entry."""
         self._client = httpx.AsyncClient(
-            headers={"User-Agent": f"finbrain-python/{__version__}"},
+            headers={
+                "User-Agent": f"finbrain-python/{__version__}",
+                "Authorization": f"Bearer {self.api_key}",
+            },
             timeout=self.timeout,
         )
         return self
@@ -101,7 +111,11 @@ class AsyncFinBrainClient:
         path: str,
         params: Optional[Dict[str, Any]] = None,
     ) -> Any:
-        """Perform a single HTTP request with auth token and retries.
+        """Perform a single HTTP request with Bearer auth and retries.
+
+        The v2 API returns responses in an envelope:
+        ``{"success": true, "data": ..., "meta": {...}}``.
+        This method auto-unwraps the envelope, returning just ``data``.
 
         Raises
         ------
@@ -117,8 +131,6 @@ class AsyncFinBrainClient:
                 "AsyncFinBrainClient not initialized. Use 'async with' context manager."
             )
 
-        params = params.copy() if params else {}
-        params["token"] = self.api_key  # FinBrain authentication
         url = urljoin(self.base_url, path)
 
         for attempt in range(self.retries + 1):
@@ -134,9 +146,15 @@ class AsyncFinBrainClient:
             # ── Happy path ────────────────────────────────────
             if resp.is_success:  # 2xx / 3xx
                 try:
-                    return resp.json()
+                    body = resp.json()
                 except ValueError as exc:
                     raise InvalidResponse("Response body is not valid JSON") from exc
+
+                # Unwrap v2 envelope
+                if isinstance(body, dict) and "success" in body:
+                    self.last_meta = body.get("meta")
+                    return body.get("data")
+                return body
 
             # ── Error path ───────────────────────────────────
             if resp.status_code in _RETRYABLE_STATUS and attempt < self.retries:
@@ -145,7 +163,6 @@ class AsyncFinBrainClient:
                 continue
 
             # No more retries → raise the mapped FinBrainError
-            # Convert httpx.Response to requests-like interface for error handler
             raise _httpx_error_to_exception(resp)
 
 

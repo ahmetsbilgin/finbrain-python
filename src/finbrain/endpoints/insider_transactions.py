@@ -1,7 +1,9 @@
 from __future__ import annotations
 import pandas as pd
-from urllib.parse import quote
-from typing import TYPE_CHECKING, Dict, Any
+import datetime as _dt
+from typing import TYPE_CHECKING, Dict, Any, List
+
+from ._utils import to_datestr
 
 if TYPE_CHECKING:  # imported only by static-type tools
     from ..client import FinBrainClient
@@ -11,7 +13,7 @@ class InsiderTransactionsAPI:
     """
     Endpoint
     --------
-    ``/insidertransactions/<MARKET>/<TICKER>`` - recent Form-4 insider trades
+    ``/insider-trading/<TICKER>`` - recent Form-4 insider trades
     for the requested ticker.
     """
 
@@ -22,23 +24,24 @@ class InsiderTransactionsAPI:
     # ------------------------------------------------------------------ #
     def ticker(
         self,
-        market: str,
         symbol: str,
         *,
+        date_from: _dt.date | str | None = None,
+        date_to: _dt.date | str | None = None,
+        limit: int | None = None,
         as_dataframe: bool = False,
     ) -> Dict[str, Any] | pd.DataFrame:
         """
-        Insider transactions for *symbol* in *market*.
+        Insider transactions for *symbol*.
 
         Parameters
         ----------
-        market :
-            Market name **exactly as FinBrain lists it**
-            (e.g. ``"S&P 500"``, ``"Germany DAX"``, ``"HK Hang Seng"``).
-            Spaces and special characters are accepted; they are URL-encoded
-            automatically.
         symbol :
             Ticker symbol; converted to upper-case.
+        date_from, date_to :
+            Optional ISO dates (``YYYY-MM-DD``) bounding the returned rows.
+        limit :
+            Maximum number of records to return.
         as_dataframe :
             If *True*, return a **pandas.DataFrame** indexed by ``date``;
             otherwise return the raw JSON dict.
@@ -47,21 +50,23 @@ class InsiderTransactionsAPI:
         -------
         dict | pandas.DataFrame
         """
-        market_slug = quote(market, safe="")
-        path = f"insidertransactions/{market_slug}/{symbol.upper()}"
-        data: Dict[str, Any] = self._c._request("GET", path)
+        params: Dict[str, str] = {}
+        if date_from:
+            params["startDate"] = to_datestr(date_from)
+        if date_to:
+            params["endDate"] = to_datestr(date_to)
+        if limit is not None:
+            params["limit"] = str(limit)
+
+        path = f"insider-trading/{symbol.upper()}"
+        data: Dict[str, Any] = self._c._request("GET", path, params=params)
 
         # --- DataFrame conversion ---
         if as_dataframe:
-            rows = data.get("insiderTransactions", [])
+            rows: List[Dict[str, Any]] = data.get("transactions", [])
             df = pd.DataFrame(rows)
             if not df.empty and "date" in df.columns:
-                # examples show dates like "Mar 08 '24" – let pandas parse flexibly
-                _fmt = "%b %d '%y"  # e.g. Mar 08 '24
-                dt = pd.to_datetime(df["date"], format=_fmt, errors="coerce")
-                if dt.isna().any():  # fallback if format ever changes
-                    dt = pd.to_datetime(df["date"], errors="coerce", dayfirst=False)
-                df["date"] = dt
+                df["date"] = pd.to_datetime(df["date"])
                 df.set_index("date", inplace=True)
             return df
 

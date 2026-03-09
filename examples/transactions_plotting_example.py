@@ -36,7 +36,6 @@ print("=" * 70)
 # Plot insider transactions for AAPL
 # This will fetch real transaction data from FinBrain and overlay on your price data
 fig_insider = fb.plot.insider_transactions(
-    market="S&P 500",
     ticker="AAPL",
     price_data=mock_prices,
     show=False,  # Don't display immediately for this example
@@ -57,7 +56,6 @@ print("=" * 70)
 
 # Plot House member trades for a specific date range
 fig_house = fb.plot.house_trades(
-    market="S&P 500",
     ticker="NVDA",
     price_data=mock_prices,
     date_from="2024-06-01",
@@ -93,7 +91,7 @@ print("=" * 70)
 # # ... Bloomberg API code ...
 
 # Then use it with FinBrain plotting:
-# fb.plot.insider_transactions("S&P 500", "AAPL", price_data=real_prices)
+# fb.plot.insider_transactions("AAPL", price_data=real_prices)
 
 print("""
 To use real price data, replace mock_prices with data from your legal source:
@@ -122,7 +120,6 @@ print("=" * 70)
 
 # Get the plot as JSON (useful for web apps, dashboards, etc.)
 json_plot = fb.plot.insider_transactions(
-    market="S&P 500",
     ticker="TSLA",
     price_data=mock_prices,
     as_json=True,

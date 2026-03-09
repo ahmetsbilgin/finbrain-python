@@ -1,6 +1,5 @@
 from __future__ import annotations
 import pandas as pd
-from urllib.parse import quote
 import datetime as _dt
 from typing import TYPE_CHECKING, Dict, Any, List
 
@@ -17,7 +16,7 @@ class OptionsAPI:
 
     Currently implemented
     ~~~~~~~~~~~~~~~~~~~~~
-    • **put_call** - ``/putcalldata/<MARKET>/<TICKER>``
+    • **put_call** - ``/put-call-ratio/<TICKER>``
 
     Future additions (open interest, IV, strikes, …) can live in this same class.
     """
@@ -29,27 +28,24 @@ class OptionsAPI:
     # ────────────────────────────────────────────────────────────────────
     def put_call(
         self,
-        market: str,
         symbol: str,
         *,
         date_from: _dt.date | str | None = None,
         date_to: _dt.date | str | None = None,
+        limit: int | None = None,
         as_dataframe: bool = False,
     ) -> Dict[str, Any] | pd.DataFrame:
         """
-        Put/Call ratio data for *symbol* in *market*.
+        Put/Call ratio data for *symbol*.
 
         Parameters
         ----------
-        market :
-            Market name **exactly as FinBrain lists it**
-            (e.g. ``"S&P 500"``, ``"Germany DAX"``, ``"HK Hang Seng"``).
-            Spaces and special characters are accepted; they are URL-encoded
-            automatically.
         symbol :
             Ticker symbol; converted to upper-case.
         date_from, date_to :
             Optional ISO dates (``YYYY-MM-DD``) bounding the returned rows.
+        limit :
+            Maximum number of records to return.
         as_dataframe :
             If *True*, return a **pandas.DataFrame** indexed by ``date``;
             otherwise return the raw JSON dict.
@@ -60,17 +56,18 @@ class OptionsAPI:
         """
         params: Dict[str, str] = {}
         if date_from:
-            params["dateFrom"] = to_datestr(date_from)
+            params["startDate"] = to_datestr(date_from)
         if date_to:
-            params["dateTo"] = to_datestr(date_to)
+            params["endDate"] = to_datestr(date_to)
+        if limit is not None:
+            params["limit"] = str(limit)
 
-        market_slug = quote(market, safe="")
-        path = f"putcalldata/{market_slug}/{symbol.upper()}"
+        path = f"put-call-ratio/{symbol.upper()}"
 
         data: Dict[str, Any] = self._c._request("GET", path, params=params)
 
         if as_dataframe:
-            rows: List[Dict[str, Any]] = data.get("putCallData", [])
+            rows: List[Dict[str, Any]] = data.get("data", [])
             df = pd.DataFrame(rows)
             if not df.empty and "date" in df.columns:
                 df["date"] = pd.to_datetime(df["date"])

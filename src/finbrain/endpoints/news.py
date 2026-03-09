@@ -5,23 +5,20 @@ from typing import TYPE_CHECKING, Dict, Any, List
 
 from ._utils import to_datestr
 
-if TYPE_CHECKING:  # imported only by static type-checkers
+if TYPE_CHECKING:
     from ..client import FinBrainClient
 
 
-class LinkedInDataAPI:
+class NewsAPI:
     """
-    Endpoint
-    --------
-    ``/linkedin/<TICKER>`` - LinkedIn follower / employee-count
-    metrics for a single ticker.
+    Endpoint: ``/news/<SYMBOL>`` (v2)
+
+    Recent news articles with sentiment analysis for a single ticker.
     """
 
-    # ------------------------------------------------------------------ #
     def __init__(self, client: "FinBrainClient") -> None:
-        self._c = client  # reference to the parent client
+        self._c = client
 
-    # ------------------------------------------------------------------ #
     def ticker(
         self,
         symbol: str,
@@ -32,19 +29,18 @@ class LinkedInDataAPI:
         as_dataframe: bool = False,
     ) -> Dict[str, Any] | pd.DataFrame:
         """
-        LinkedIn follower- and employee-count metrics for a single ticker.
+        Get recent news articles with sentiment for *symbol*.
 
         Parameters
         ----------
         symbol :
-            Stock symbol; auto-upper-cased.
+            Ticker symbol; auto-upper-cased.
         date_from, date_to :
-            Optional ``YYYY-MM-DD`` bounds.
+            Optional ISO dates (``YYYY-MM-DD``).
         limit :
-            Maximum number of records to return.
+            Maximum number of articles to return.
         as_dataframe :
-            If *True*, return a **pandas.DataFrame** indexed by ``date``;
-            otherwise return the raw JSON dict.
+            If *True*, return a **pandas.DataFrame** indexed by ``date``.
 
         Returns
         -------
@@ -58,12 +54,11 @@ class LinkedInDataAPI:
         if limit is not None:
             params["limit"] = str(limit)
 
-        path = f"linkedin/{symbol.upper()}"
-
+        path = f"news/{symbol.upper()}"
         data: Dict[str, Any] = self._c._request("GET", path, params=params)
 
         if as_dataframe:
-            rows: List[Dict[str, Any]] = data.get("data", [])
+            rows: List[Dict[str, Any]] = data.get("articles", [])
             df = pd.DataFrame(rows)
             if not df.empty and "date" in df.columns:
                 df["date"] = pd.to_datetime(df["date"])

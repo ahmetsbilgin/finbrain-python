@@ -20,6 +20,9 @@ from .endpoints.senate_trades import SenateTradesAPI
 from .endpoints.insider_transactions import InsiderTransactionsAPI
 from .endpoints.linkedin_data import LinkedInDataAPI
 from .endpoints.options import OptionsAPI
+from .endpoints.news import NewsAPI
+from .endpoints.screener import ScreenerAPI
+from .endpoints.recent import RecentAPI
 
 
 # Which status codes merit a retry
@@ -30,10 +33,10 @@ _BACKOFF_BASE = 2
 
 class FinBrainClient:
     """
-    Thin wrapper around the FinBrain REST API.
+    Thin wrapper around the FinBrain REST API (v2).
     """
 
-    DEFAULT_BASE_URL = "https://api.finbrain.tech/v1/"
+    DEFAULT_BASE_URL = "https://api.finbrain.tech/v2/"
 
     def __init__(
         self,
@@ -49,10 +52,11 @@ class FinBrainClient:
 
         self.session = requests.Session()
         self.session.headers["User-Agent"] = f"finbrain-python/{__version__}"
-        # optional: mount urllib3 Retry adapter here
+        self.session.headers["Authorization"] = f"Bearer {self.api_key}"
 
         self.timeout = timeout
         self.retries = retries
+        self.last_meta: dict | None = None
 
         # expose plotting under .plot
         self.plot = _PlotNamespace(self)
@@ -68,6 +72,9 @@ class FinBrainClient:
         self.insider_transactions = InsiderTransactionsAPI(self)
         self.linkedin_data = LinkedInDataAPI(self)
         self.options = OptionsAPI(self)
+        self.news = NewsAPI(self)
+        self.screener = ScreenerAPI(self)
+        self.recent = RecentAPI(self)
 
     # ---------- private helpers ----------
     def _request(
@@ -76,7 +83,11 @@ class FinBrainClient:
         path: str,
         params: Optional[Dict[str, Any]] = None,
     ) -> Any:
-        """Perform a single HTTP request with auth token and retries.
+        """Perform a single HTTP request with Bearer auth and retries.
+
+        The v2 API returns responses in an envelope:
+        ``{"success": true, "data": ..., "meta": {...}}``.
+        This method auto-unwraps the envelope, returning just ``data``.
 
         Raises
         ------
@@ -85,8 +96,6 @@ class FinBrainClient:
         InvalidResponse
             If the body is not valid JSON.
         """
-        params = params.copy() if params else {}
-        params["token"] = self.api_key  # FinBrain authentication
         url = urljoin(self.base_url, path)
 
         for attempt in range(self.retries + 1):
@@ -104,9 +113,15 @@ class FinBrainClient:
             # ── Happy path ────────────────────────────────────
             if resp.ok:  # 2xx / 3xx
                 try:
-                    return resp.json()
+                    body = resp.json()
                 except ValueError as exc:
                     raise InvalidResponse("Response body is not valid JSON") from exc
+
+                # Unwrap v2 envelope
+                if isinstance(body, dict) and "success" in body:
+                    self.last_meta = body.get("meta")
+                    return body.get("data")
+                return body
 
             # ── Error path ───────────────────────────────────
             if resp.status_code in _RETRYABLE_STATUS and attempt < self.retries:

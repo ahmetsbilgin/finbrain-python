@@ -1,61 +1,85 @@
 # tests/test_linkedin_data.py
 import pandas as pd
 import pytest
-from urllib.parse import quote
 
-from .conftest import stub_json
+from .conftest import stub_json, wrap_v2
 from finbrain.exceptions import BadRequest
 
-MARKET = "S&P 500"
-ENC_MARKET = quote(MARKET, safe="")  # → 'S%26P%20500'
 TICKER = "AMZN"
 
 
 # ─────────── raw JSON branch ────────────────────────────────────────────
 def test_linkedin_raw_ok(client, _activate_responses):
-    path = f"linkedindata/{ENC_MARKET}/{TICKER}"
-    payload = {
-        "ticker": TICKER,
+    path = f"linkedin/{TICKER}"
+    payload = wrap_v2({
+        "symbol": "AMZN",
         "name": "Amazon.com Inc.",
-        "linkedinData": [
-            {"date": "2024-03-20", "employeeCount": 755461, "followersCount": 30628460}
+        "data": [
+            {
+                "date": "2024-01-15",
+                "employeeCount": 1500000,
+                "followerCount": 30000000,
+                "jobCount": 5000,
+            }
         ],
-    }
+    })
 
     stub_json(_activate_responses, "GET", path, payload)
 
-    data = client.linkedin_data.ticker(MARKET, TICKER)
-    assert data["ticker"] == TICKER
-    assert isinstance(data["linkedinData"], list)
-    assert data["linkedinData"][0]["employeeCount"] == 755461
+    data = client.linkedin_data.ticker(symbol=TICKER)
+    assert data["symbol"] == TICKER
+    assert isinstance(data["data"], list)
+    assert data["data"][0]["employeeCount"] == 1500000
 
 
 # ─────────── DataFrame branch ───────────────────────────────────────────
 def test_linkedin_dataframe_ok(client, _activate_responses):
-    path = f"linkedindata/{ENC_MARKET}/{TICKER}"
-    payload = {
-        "ticker": TICKER,
+    path = f"linkedin/{TICKER}"
+    payload = wrap_v2({
+        "symbol": "AMZN",
         "name": "Amazon.com Inc.",
-        "linkedinData": [
-            {"date": "2024-03-20", "employeeCount": 755461, "followersCount": 30628460},
-            {"date": "2024-03-19", "employeeCount": 755000, "followersCount": 30600000},
+        "data": [
+            {
+                "date": "2024-01-15",
+                "employeeCount": 1500000,
+                "followerCount": 30000000,
+                "jobCount": 5000,
+            },
+            {
+                "date": "2024-01-14",
+                "employeeCount": 1499000,
+                "followerCount": 29990000,
+                "jobCount": 4900,
+            },
         ],
-    }
+    })
 
     stub_json(_activate_responses, "GET", path, payload)
 
-    df = client.linkedin_data.ticker(MARKET, TICKER, as_dataframe=True)
+    df = client.linkedin_data.ticker(symbol=TICKER, as_dataframe=True)
 
     assert isinstance(df, pd.DataFrame)
+    assert len(df) == 2
+    assert set(df.columns) == {"employeeCount", "followerCount", "jobCount"}
     assert df.index.name == "date"
-    assert pd.Timestamp("2024-03-19") in df.index
-    assert df.loc["2024-03-20", "followersCount"] == 30628460
+    assert pd.api.types.is_datetime64_any_dtype(df.index)
+    assert pd.Timestamp("2024-01-15") in df.index
+    assert pd.Timestamp("2024-01-14") in df.index
+    assert df.loc["2024-01-15", "followerCount"] == 30000000
+    assert df.loc["2024-01-14", "employeeCount"] == 1499000
+    assert df.loc["2024-01-14", "jobCount"] == 4900
 
 
 # ─────────── error mapping ──────────────────────────────────────────────
 def test_linkedin_bad_request(client, _activate_responses):
-    path = f"linkedindata/{ENC_MARKET}/{TICKER}"
-    stub_json(_activate_responses, "GET", path, {"message": "bad"}, status=400)
+    path = f"linkedin/{TICKER}"
+    stub_json(
+        _activate_responses,
+        "GET",
+        path,
+        {"success": False, "error": {"code": "VALIDATION_ERROR", "message": "bad"}},
+        status=400,
+    )
 
     with pytest.raises(BadRequest):
-        client.linkedin_data.ticker(MARKET, TICKER)
+        client.linkedin_data.ticker(symbol=TICKER)

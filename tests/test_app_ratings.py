@@ -1,56 +1,81 @@
 # tests/test_app_ratings.py
 import pytest
 import pandas as pd
-from urllib.parse import quote
-from .conftest import stub_json
+from .conftest import stub_json, wrap_v2
 from finbrain.exceptions import BadRequest
 
-MARKET = "S&P 500"  # human-readable name with space
-ENC_MARKET = quote(MARKET, safe="")  # → 'S%26P%20500'
 TICKER = "AMZN"
 
 
+# ─────────── raw JSON branch ────────────────────────────────────────────
 def test_app_ratings_raw(client, _activate_responses):
     """Endpoint returns the original JSON shape."""
-    path = f"appratings/{ENC_MARKET}/{TICKER}"
-    payload = {"ticker": "AMZN", "appRatings": []}
+    path = f"app-ratings/{TICKER}"
+    payload = wrap_v2({
+        "symbol": "AMZN",
+        "name": "Amazon.com Inc.",
+        "data": [
+            {
+                "date": "2024-01-15",
+                "ios": {"score": 4.07, "ratingsCount": 88533},
+                "android": {
+                    "score": 3.75,
+                    "ratingsCount": 567996,
+                    "installCount": None,
+                },
+            }
+        ],
+    })
 
     stub_json(_activate_responses, "GET", path, payload)
 
-    data = client.app_ratings.ticker(MARKET, TICKER)
-    assert data["ticker"] == "AMZN"
-    assert isinstance(data["appRatings"], list)
+    data = client.app_ratings.ticker(symbol=TICKER)
+    assert data["symbol"] == "AMZN"
+    assert isinstance(data["data"], list)
 
 
+# ─────────── DataFrame branch ───────────────────────────────────────────
 def test_app_ratings_dataframe(client, _activate_responses):
     """Endpoint returns a DataFrame with `date` as the index."""
-    path = f"appratings/{ENC_MARKET}/{TICKER}"
-    ratings = [
-        {
-            "date": "2024-02-02",
-            "playStoreScore": 3.75,
-            "playStoreRatingsCount": 567996,
-            "appStoreScore": 4.07,
-            "appStoreRatingsCount": 88533,
-            "playStoreInstallCount": None,
-        }
-    ]
-    payload = {"ticker": "AMZN", "name": "Amazon.com Inc.", "appRatings": ratings}
+    path = f"app-ratings/{TICKER}"
+    payload = wrap_v2({
+        "symbol": "AMZN",
+        "name": "Amazon.com Inc.",
+        "data": [
+            {
+                "date": "2024-01-15",
+                "ios": {"score": 4.07, "ratingsCount": 88533},
+                "android": {
+                    "score": 3.75,
+                    "ratingsCount": 567996,
+                    "installCount": None,
+                },
+            }
+        ],
+    })
 
     stub_json(_activate_responses, "GET", path, payload)
 
-    df = client.app_ratings.ticker(MARKET, TICKER, as_dataframe=True)
-    # basic shape checks
+    df = client.app_ratings.ticker(symbol=TICKER, as_dataframe=True)
     assert isinstance(df, pd.DataFrame)
+    assert len(df) == 1
     assert df.index.name == "date"
-    assert "playStoreScore" in df.columns
-    assert df["playStoreScore"].dtype.kind in "fi"  # float or int
-    # the single mocked row should appear at the expected date
-    assert pd.Timestamp("2024-02-02") in df.index
+    assert pd.api.types.is_datetime64_any_dtype(df.index)
+    assert pd.Timestamp("2024-01-15") in df.index
+    assert set(df.columns) == {"ios_score", "ios_ratingsCount", "android_score", "android_ratingsCount", "android_installCount"}
+    assert df.loc["2024-01-15", "ios_score"] == 4.07
+    assert df.loc["2024-01-15", "android_ratingsCount"] == 567996
 
 
+# ─────────── error mapping ──────────────────────────────────────────────
 def test_app_ratings_bad_request(client, _activate_responses):
-    path = f"appratings/{ENC_MARKET}/{TICKER}"
-    stub_json(_activate_responses, "GET", path, {"message": "bad"}, status=400)
+    path = f"app-ratings/{TICKER}"
+    stub_json(
+        _activate_responses,
+        "GET",
+        path,
+        {"success": False, "error": {"code": "VALIDATION_ERROR", "message": "bad"}},
+        status=400,
+    )
     with pytest.raises(BadRequest):
-        client.app_ratings.ticker(MARKET, TICKER)
+        client.app_ratings.ticker(symbol=TICKER)

@@ -1,88 +1,88 @@
 # tests/test_analyst_ratings.py
 import pandas as pd
 import pytest
-from urllib.parse import quote
 
-from .conftest import stub_json
+from .conftest import stub_json, wrap_v2
 from finbrain.exceptions import BadRequest
 
-
-# ─────────── helpers ────────────────────────────────────────────────────
-MARKET = "S&P 500"  # contains space and &
-ENC_MARKET = quote(MARKET, safe="")  # → 'S%26P%20500'
 TICKER = "AMZN"
 
 
 # ─────────── raw JSON branch ────────────────────────────────────────────
 def test_analyst_ratings_raw_ok(client, _activate_responses):
-    path = f"analystratings/{ENC_MARKET}/{TICKER}"
-    payload = {
-        "ticker": TICKER,
+    path = f"analyst-ratings/{TICKER}"
+    payload = wrap_v2({
+        "symbol": "AMZN",
         "name": "Amazon.com Inc.",
-        "analystRatings": [
+        "ratings": [
             {
-                "date": "2024-02-02",
-                "type": "Reiterated",
-                "institution": "Piper Sandler",
-                "signal": "Neutral",
-                "targetPrice": "$205 → $190",
+                "date": "2024-01-15",
+                "institution": "Goldman Sachs",
+                "action": "upgrade",
+                "rating": "Buy",
+                "targetPrice": 200.0,
             }
         ],
-    }
+    })
 
     stub_json(_activate_responses, "GET", path, payload)
 
-    data = client.analyst_ratings.ticker(MARKET, TICKER)
-    assert data["ticker"] == TICKER
-    assert isinstance(data["analystRatings"], list)
-    assert data["analystRatings"][0]["institution"] == "Piper Sandler"
+    data = client.analyst_ratings.ticker(symbol=TICKER)
+    assert data["symbol"] == TICKER
+    assert isinstance(data["ratings"], list)
+    assert data["ratings"][0]["institution"] == "Goldman Sachs"
 
 
 # ─────────── DataFrame branch ───────────────────────────────────────────
 def test_analyst_ratings_dataframe_ok(client, _activate_responses):
-    path = f"analystratings/{ENC_MARKET}/{TICKER}"
-    payload = {
-        "ticker": TICKER,
+    path = f"analyst-ratings/{TICKER}"
+    payload = wrap_v2({
+        "symbol": "AMZN",
         "name": "Amazon.com Inc.",
-        "analystRatings": [
-            {
-                "date": "2024-02-02",
-                "type": "Reiterated",
-                "institution": "Piper Sandler",
-                "signal": "Neutral",
-                "targetPrice": "$205 → $190",
-            },
+        "ratings": [
             {
                 "date": "2024-01-15",
-                "type": "Upgrade",
+                "institution": "Goldman Sachs",
+                "action": "upgrade",
+                "rating": "Buy",
+                "targetPrice": 200.0,
+            },
+            {
+                "date": "2024-01-10",
                 "institution": "Barclays",
-                "signal": "Buy",
-                "targetPrice": "$180 → $210",
+                "action": "reiterate",
+                "rating": "Neutral",
+                "targetPrice": 180.0,
             },
         ],
-    }
+    })
 
     stub_json(_activate_responses, "GET", path, payload)
 
-    df = client.analyst_ratings.ticker(MARKET, TICKER, as_dataframe=True)
+    df = client.analyst_ratings.ticker(symbol=TICKER, as_dataframe=True)
 
-    # basic checks
     assert isinstance(df, pd.DataFrame)
+    assert len(df) == 2
+    assert set(df.columns) == {"institution", "action", "rating", "targetPrice"}
     assert df.index.name == "date"
-    assert pd.Timestamp("2024-02-02") in df.index
-    assert df.loc["2024-01-15", "institution"] == "Barclays"
+    assert pd.api.types.is_datetime64_any_dtype(df.index)
+    assert pd.Timestamp("2024-01-15") in df.index
+    assert pd.Timestamp("2024-01-10") in df.index
+    assert df.loc["2024-01-10", "institution"] == "Barclays"
+    assert df.loc["2024-01-15", "rating"] == "Buy"
+    assert df.loc["2024-01-15", "targetPrice"] == 200.0
 
 
 # ─────────── error mapping ──────────────────────────────────────────────
 def test_analyst_ratings_bad_request(client, _activate_responses):
-    path = f"analystratings/{ENC_MARKET}/{TICKER}"
+    path = f"analyst-ratings/{TICKER}"
     stub_json(
         _activate_responses,
         "GET",
         path,
-        {"message": "bad params"},
+        {"success": False, "error": {"code": "VALIDATION_ERROR", "message": "bad"}},
         status=400,
     )
 
     with pytest.raises(BadRequest):
-        client.analyst_ratings.ticker(MARKET, TICKER)
+        client.analyst_ratings.ticker(symbol=TICKER)

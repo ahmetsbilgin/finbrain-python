@@ -53,7 +53,6 @@ async def fetch_sentiment():
     async with AsyncFinBrainClient(api_key=api_key) as fb:
         print("\nFetching sentiment data for AMZN...")
         sentiment = await fb.sentiments.ticker(
-            "S&P 500",
             "AMZN",
             date_from="2025-01-01",
             date_to="2025-06-30",

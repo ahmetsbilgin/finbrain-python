@@ -1,7 +1,7 @@
 from __future__ import annotations
 import pandas as pd
 import datetime as _dt
-from typing import TYPE_CHECKING, Dict, Any
+from typing import TYPE_CHECKING, Dict, Any, List
 
 from ._utils import to_datestr
 
@@ -9,8 +9,8 @@ if TYPE_CHECKING:
     from ..client import AsyncFinBrainClient
 
 
-class AsyncSenateTradesAPI:
-    """Async wrapper for /congress/senate endpoints."""
+class AsyncNewsAPI:
+    """Async wrapper for /news endpoints (v2)."""
 
     def __init__(self, client: "AsyncFinBrainClient") -> None:
         self._c = client
@@ -24,7 +24,7 @@ class AsyncSenateTradesAPI:
         limit: int | None = None,
         as_dataframe: bool = False,
     ) -> Dict[str, Any] | pd.DataFrame:
-        """Fetch Senate-member trades for a symbol (async)."""
+        """Get recent news articles with sentiment for symbol (async)."""
         params: Dict[str, str] = {}
         if date_from:
             params["startDate"] = to_datestr(date_from)
@@ -33,12 +33,11 @@ class AsyncSenateTradesAPI:
         if limit is not None:
             params["limit"] = str(limit)
 
-        path = f"congress/senate/{symbol.upper()}"
-
+        path = f"news/{symbol.upper()}"
         data: Dict[str, Any] = await self._c._request("GET", path, params=params)
 
         if as_dataframe:
-            rows = data.get("trades", [])
+            rows: List[Dict[str, Any]] = data.get("articles", [])
             df = pd.DataFrame(rows)
             if not df.empty and "date" in df.columns:
                 df["date"] = pd.to_datetime(df["date"])

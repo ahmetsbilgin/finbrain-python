@@ -2,7 +2,7 @@
 import pandas as pd
 import pytest
 
-from .conftest import stub_json
+from .conftest import stub_json, wrap_v2
 from finbrain.exceptions import BadRequest
 
 
@@ -11,18 +11,20 @@ def test_markets_ok(client, _activate_responses):
     stub_json(
         _activate_responses,
         "GET",
-        "available/markets",
-        {"availableMarkets": ["S&P 500", "NASDAQ"]},
+        "markets",
+        wrap_v2([{"name": "S&P 500", "region": "US"}, {"name": "NASDAQ", "region": "US"}]),
     )
-    assert client.available.markets() == ["S&P 500", "NASDAQ"]
+    data = client.available.markets()
+    assert isinstance(data, list)
+    assert data[0]["name"] == "S&P 500"
 
 
 def test_markets_bad_request(client, _activate_responses):
     stub_json(
         _activate_responses,
         "GET",
-        "available/markets",
-        {"message": "oops"},
+        "markets",
+        {"success": False, "error": {"code": "VALIDATION_ERROR", "message": "bad"}},
         status=400,
     )
     with pytest.raises(BadRequest):
@@ -31,28 +33,34 @@ def test_markets_bad_request(client, _activate_responses):
 
 # ─────────── tickers ────────────────────────────────────────────────────
 def test_tickers_list_ok(client, _activate_responses):
-    path = "available/tickers/daily"
-    payload = [
-        {"ticker": "AAPL", "name": "Apple Inc.", "market": "S&P 500"},
-        {"ticker": "MSFT", "name": "Microsoft Corp.", "market": "S&P 500"},
-    ]
-    stub_json(_activate_responses, "GET", path, payload)
+    path = "tickers"
+    payload = wrap_v2({
+        "tickers": [
+            {"symbol": "AAPL", "name": "Apple Inc."},
+            {"symbol": "AMZN", "name": "Amazon.com Inc."},
+        ]
+    })
+    stub_json(_activate_responses, "GET", path, payload, params={"type": "daily"})
 
     data = client.available.tickers("daily")
     assert isinstance(data, list)
-    assert data[0]["ticker"] == "AAPL"
+    assert len(data) == 2
+    assert data[0]["symbol"] == "AAPL"
 
 
 def test_tickers_dataframe_ok(client, _activate_responses):
-    path = "available/tickers/monthly"
-    payload = [
-        {"ticker": "AMZN", "name": "Amazon.com Inc.", "market": "NASDAQ"},
-    ]
-    stub_json(_activate_responses, "GET", path, payload)
+    path = "tickers"
+    payload = wrap_v2({
+        "tickers": [
+            {"symbol": "AMZN", "name": "Amazon.com Inc."},
+        ]
+    })
+    stub_json(_activate_responses, "GET", path, payload, params={"type": "daily"})
 
-    df = client.available.tickers("monthly", as_dataframe=True)
+    df = client.available.tickers("daily", as_dataframe=True)
     assert isinstance(df, pd.DataFrame)
-    assert df.loc[0, "ticker"] == "AMZN"
+    assert len(df) == 1
+    assert df.loc[0, "symbol"] == "AMZN"
 
 
 def test_tickers_invalid_type(client):

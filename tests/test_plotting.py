@@ -16,7 +16,7 @@ def test_options_plot_invalid_kind():
     plot = _PlotNamespace(MockClient())
 
     with pytest.raises(ValueError, match="Unknown kind 'invalid'"):
-        plot.options("S&P 500", "AAPL", kind="invalid")
+        plot.options("AAPL", kind="invalid")
 
 
 def test_options_plot_valid_kind_requires_real_client():
@@ -25,7 +25,7 @@ def test_options_plot_valid_kind_requires_real_client():
 
     # This should pass the kind check but fail when trying to call client methods
     with pytest.raises(AttributeError):
-        plot.options("S&P 500", "AAPL", kind="put_call")
+        plot.options("AAPL", kind="put_call")
 
 
 def test_insider_transactions_empty_price_data():
@@ -34,7 +34,7 @@ def test_insider_transactions_empty_price_data():
     empty_df = pd.DataFrame()
 
     with pytest.raises(ValueError, match="price_data cannot be empty"):
-        plot.insider_transactions("S&P 500", "AAPL", price_data=empty_df)
+        plot.insider_transactions("AAPL", price_data=empty_df)
 
 
 def test_insider_transactions_missing_price_column():
@@ -44,7 +44,7 @@ def test_insider_transactions_missing_price_column():
     bad_df = pd.DataFrame({"volume": [100, 200], "high": [150, 151]})
 
     with pytest.raises(ValueError, match="price_data must contain a price column"):
-        plot.insider_transactions("S&P 500", "AAPL", price_data=bad_df)
+        plot.insider_transactions("AAPL", price_data=bad_df)
 
 
 def test_house_trades_empty_price_data():
@@ -53,7 +53,7 @@ def test_house_trades_empty_price_data():
     empty_df = pd.DataFrame()
 
     with pytest.raises(ValueError, match="price_data cannot be empty"):
-        plot.house_trades("S&P 500", "AAPL", price_data=empty_df)
+        plot.house_trades("AAPL", price_data=empty_df)
 
 
 def test_house_trades_missing_price_column():
@@ -63,7 +63,7 @@ def test_house_trades_missing_price_column():
     bad_df = pd.DataFrame({"volume": [100, 200], "high": [150, 151]})
 
     with pytest.raises(ValueError, match="price_data must contain a price column"):
-        plot.house_trades("S&P 500", "NVDA", price_data=bad_df)
+        plot.house_trades("NVDA", price_data=bad_df)
 
 
 def test_insider_transactions_accepts_various_price_columns():
@@ -75,8 +75,8 @@ def test_insider_transactions_accepts_various_price_columns():
         class insider_transactions:
             @staticmethod
             def ticker(*args, **kwargs):
-                # Return empty DataFrame with expected structure (insider uses 'transaction')
-                df = pd.DataFrame({"transaction": []})
+                # Return empty DataFrame with expected structure (insider uses 'transactionType')
+                df = pd.DataFrame({"transactionType": []})
                 df.index = pd.DatetimeIndex([])
                 df.index.name = "date"
                 return df
@@ -88,7 +88,7 @@ def test_insider_transactions_accepts_various_price_columns():
         {"close": [150, 151, 152], "date": pd.date_range("2024-01-01", periods=3)}
     ).set_index("date")
 
-    fig = plot.insider_transactions("S&P 500", "AAPL", price_data=price_df, show=False)
+    fig = plot.insider_transactions("AAPL", price_data=price_df, show=False)
     assert fig is not None
 
     # Test with 'Close' column (capitalized)
@@ -96,9 +96,7 @@ def test_insider_transactions_accepts_various_price_columns():
         {"Close": [150, 151, 152], "date": pd.date_range("2024-01-01", periods=3)}
     ).set_index("date")
 
-    fig2 = plot.insider_transactions(
-        "S&P 500", "AAPL", price_data=price_df2, show=False
-    )
+    fig2 = plot.insider_transactions("AAPL", price_data=price_df2, show=False)
     assert fig2 is not None
 
     # Test with 'price' column
@@ -106,9 +104,7 @@ def test_insider_transactions_accepts_various_price_columns():
         {"price": [150, 151, 152], "date": pd.date_range("2024-01-01", periods=3)}
     ).set_index("date")
 
-    fig3 = plot.insider_transactions(
-        "S&P 500", "AAPL", price_data=price_df3, show=False
-    )
+    fig3 = plot.insider_transactions("AAPL", price_data=price_df3, show=False)
     assert fig3 is not None
 
 
@@ -121,8 +117,8 @@ def test_house_trades_accepts_various_price_columns():
         class house_trades:
             @staticmethod
             def ticker(*args, **kwargs):
-                # Return empty DataFrame with expected structure (house uses 'type')
-                df = pd.DataFrame({"type": []})
+                # Return empty DataFrame with expected structure (house uses 'transactionType')
+                df = pd.DataFrame({"transactionType": []})
                 df.index = pd.DatetimeIndex([])
                 df.index.name = "date"
                 return df
@@ -134,5 +130,5 @@ def test_house_trades_accepts_various_price_columns():
         {"close": [150, 151, 152], "date": pd.date_range("2024-01-01", periods=3)}
     ).set_index("date")
 
-    fig = plot.house_trades("S&P 500", "NVDA", price_data=price_df, show=False)
+    fig = plot.house_trades("NVDA", price_data=price_df, show=False)
     assert fig is not None

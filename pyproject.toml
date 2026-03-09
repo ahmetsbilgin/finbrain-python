@@ -46,3 +46,8 @@ dev = [
     "twine",
     "ruff",                      # linter/formatter (optional)
 ]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: hits the real FinBrain v2 API (requires FINBRAIN_API_KEY)",
+]

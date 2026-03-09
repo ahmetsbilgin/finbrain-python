@@ -23,7 +23,6 @@ class _PlotNamespace:
     # ────────────────────────────────────────────────────────────────────────────
     def app_ratings(
         self,
-        market: str,
         ticker: str,
         *,
         store: str = "play",
@@ -48,7 +47,6 @@ class _PlotNamespace:
         """
         # 1) pull data
         df = self._fb.app_ratings.ticker(
-            market,
             ticker,
             date_from=date_from,
             date_to=date_to,
@@ -58,13 +56,13 @@ class _PlotNamespace:
 
         # 2) pick columns & colours
         s = store.lower()
-        if s in ("play", "playstore", "google"):
-            count_col, score_col = "playStoreRatingsCount", "playStoreScore"
-            count_name, score_name = "Play Store Ratings Count", "Play Store Score"
+        if s in ("play", "playstore", "google", "android"):
+            count_col, score_col = "android_ratingsCount", "android_score"
+            count_name, score_name = "Android Ratings Count", "Android Score"
             count_color, score_color = "rgba(0,190,0,0.65)", "#02d2ff"
-        elif s in ("app", "appstore", "apple"):
-            count_col, score_col = "appStoreRatingsCount", "appStoreScore"
-            count_name, score_name = "App Store Ratings Count", "App Store Score"
+        elif s in ("app", "appstore", "apple", "ios"):
+            count_col, score_col = "ios_ratingsCount", "ios_score"
+            count_name, score_name = "iOS Ratings Count", "iOS Score"
             count_color, score_color = "rgba(0,190,0,0.65)", "#02d2ff"
         else:
             raise ValueError("store must be 'play' or 'app'")
@@ -133,11 +131,10 @@ class _PlotNamespace:
         return fig.to_json() if as_json else fig
 
     # ────────────────────────────────────────────────────────────────────────────
-    #  LinkedIn plot  •  bars = employeeCount  •  line = followersCount
+    #  LinkedIn plot  •  bars = employeeCount  •  line = followerCount
     # ────────────────────────────────────────────────────────────────────────────
     def linkedin(
         self,
-        market: str,
         ticker: str,
         *,
         date_from: str | None = None,
@@ -151,10 +148,9 @@ class _PlotNamespace:
         Plot LinkedIn company metrics.
 
         * **Bars**   → ``employeeCount`` (primary y-axis)
-        * **Line**   → ``followersCount`` (secondary y-axis)
+        * **Line**   → ``followerCount`` (secondary y-axis)
         """
         df = self._fb.linkedin_data.ticker(
-            market,
             ticker,
             date_from=date_from,
             date_to=date_to,
@@ -182,7 +178,7 @@ class _PlotNamespace:
         fig.add_scatter(
             name="Followers",
             x=df.index,
-            y=df["followersCount"],
+            y=df["followerCount"],
             mode="lines",
             line=dict(width=2, color="#f9c80e"),
             yaxis="y2",
@@ -210,7 +206,6 @@ class _PlotNamespace:
     # --------------------------------------------------------------------- #
     def sentiments(
         self,
-        market: str,
         ticker: str,
         *,
         date_from: str | None = None,
@@ -229,8 +224,6 @@ class _PlotNamespace:
 
         Parameters
         ----------
-        market : str
-            Market identifier (e.g. ``"S&P 500"``).
         ticker : str
             Ticker symbol (e.g. ``"AMZN"``).
         date_from, date_to : str or None, optional
@@ -258,12 +251,11 @@ class _PlotNamespace:
 
         Examples
         --------
-        >>> fb.plot.sentiments("S&P 500", "AMZN",
+        >>> fb.plot.sentiments("AMZN",
         ...                    date_from="2025-01-01",
         ...                    date_to="2025-05-31")
         """
         df: pd.DataFrame = self._fb.sentiments.ticker(
-            market,
             ticker,
             date_from=date_from,
             date_to=date_to,
@@ -306,7 +298,6 @@ class _PlotNamespace:
     # --------------------------------------------------------------------- #
     def options(
         self,
-        market: str,
         ticker: str,
         *,
         kind: str = "put_call",
@@ -323,8 +314,8 @@ class _PlotNamespace:
         Currently implemented ``kind`` values
         --------------------------------------
         ``"put_call"`` (default)
-            *Stacked* bars of ``callCount`` (green, bottom) and
-            ``putCount`` (red, top) plus a yellow line for the ``ratio``
+            *Stacked* bars of ``callVolume`` (green, bottom) and
+            ``putVolume`` (red, top) plus a yellow line for the ``ratio``
             on a secondary y-axis.
 
         Additional kinds can be added in future without changing the
@@ -332,8 +323,8 @@ class _PlotNamespace:
 
         Parameters
         ----------
-        market, ticker : str
-            Market identifier and ticker symbol.
+        ticker : str
+            Ticker symbol.
         kind : {'put_call', ...}, default ``"put_call"``
             Which visualisation to render.  Unknown values raise
             :class:`ValueError`.
@@ -347,14 +338,13 @@ class _PlotNamespace:
 
         Examples
         --------
-        >>> fb.plot.options("S&P 500", "AMZN",
+        >>> fb.plot.options("AMZN",
         ...                 kind="put_call",
         ...                 date_from="2025-01-01",
         ...                 date_to="2025-05-31")
         """
         if kind == "put_call":
             df = self._fb.options.put_call(
-                market,
                 ticker,
                 date_from=date_from,
                 date_to=date_to,
@@ -423,7 +413,7 @@ class _PlotNamespace:
         )
 
         # add the three lines
-        fig.add_scatter(x=df.index, y=df["main"], mode="lines", name="Predicted")
+        fig.add_scatter(x=df.index, y=df["mid"], mode="lines", name="Predicted")
         fig.add_scatter(
             x=df.index,
             y=df["upper"],
@@ -454,7 +444,6 @@ class _PlotNamespace:
     # --------------------------------------------------------------------- #
     def insider_transactions(
         self,
-        market: str,
         ticker: str,
         price_data: pd.DataFrame,
         *,
@@ -471,8 +460,6 @@ class _PlotNamespace:
 
         Parameters
         ----------
-        market : str
-            Market identifier (e.g. ``"S&P 500"``).
         ticker : str
             Ticker symbol (e.g. ``"AAPL"``).
         price_data : pandas.DataFrame
@@ -507,7 +494,7 @@ class _PlotNamespace:
         ...     "close": [150, 152, 151, 155],
         ...     "date": pd.date_range("2024-01-01", periods=4)
         ... }).set_index("date")
-        >>> fb.plot.insider_transactions("S&P 500", "AAPL", price_df)
+        >>> fb.plot.insider_transactions("AAPL", price_df)
         """
         # Validate price_data
         if price_data.empty:
@@ -533,7 +520,7 @@ class _PlotNamespace:
 
         # Fetch insider transactions
         transactions_df = self._fb.insider_transactions.ticker(
-            market, ticker, as_dataframe=True, **kwargs
+            ticker, as_dataframe=True, **kwargs
         )
 
         fig = self._plot_transactions_on_price(
@@ -555,7 +542,6 @@ class _PlotNamespace:
     # --------------------------------------------------------------------- #
     def house_trades(
         self,
-        market: str,
         ticker: str,
         price_data: pd.DataFrame,
         *,
@@ -574,8 +560,6 @@ class _PlotNamespace:
 
         Parameters
         ----------
-        market : str
-            Market identifier (e.g. ``"S&P 500"``).
         ticker : str
             Ticker symbol (e.g. ``"AAPL"``).
         price_data : pandas.DataFrame
@@ -612,7 +596,7 @@ class _PlotNamespace:
         ...     "close": [150, 152, 151, 155],
         ...     "date": pd.date_range("2024-01-01", periods=4)
         ... }).set_index("date")
-        >>> fb.plot.house_trades("S&P 500", "AAPL", price_df,
+        >>> fb.plot.house_trades("AAPL", price_df,
         ...                      date_from="2024-01-01", date_to="2024-12-31")
         """
         # Validate price_data
@@ -639,7 +623,6 @@ class _PlotNamespace:
 
         # Fetch house trades
         transactions_df = self._fb.house_trades.ticker(
-            market,
             ticker,
             date_from=date_from,
             date_to=date_to,
@@ -666,7 +649,6 @@ class _PlotNamespace:
     # --------------------------------------------------------------------- #
     def senate_trades(
         self,
-        market: str,
         ticker: str,
         price_data: pd.DataFrame,
         *,
@@ -685,8 +667,6 @@ class _PlotNamespace:
 
         Parameters
         ----------
-        market : str
-            Market identifier (e.g. ``"NASDAQ"``).
         ticker : str
             Ticker symbol (e.g. ``"META"``).
         price_data : pandas.DataFrame
@@ -723,7 +703,7 @@ class _PlotNamespace:
         ...     "close": [500, 510, 505, 520],
         ...     "date": pd.date_range("2024-01-01", periods=4)
         ... }).set_index("date")
-        >>> fb.plot.senate_trades("NASDAQ", "META", price_df,
+        >>> fb.plot.senate_trades("META", price_df,
         ...                       date_from="2024-01-01", date_to="2024-12-31")
         """
         # Validate price_data
@@ -750,7 +730,6 @@ class _PlotNamespace:
 
         # Fetch senate trades
         transactions_df = self._fb.senate_trades.ticker(
-            market,
             ticker,
             date_from=date_from,
             date_to=date_to,
@@ -795,8 +774,8 @@ class _PlotNamespace:
         price_col : str
             Name of the price column in price_data.
         transactions_df : pd.DataFrame
-            Transaction data with DatetimeIndex and either 'transaction' (insider)
-            or 'type' (house) column.
+            Transaction data with DatetimeIndex and a 'transactionType' column
+            (v2 API), or legacy 'transaction'/'type' column.
         ticker : str
             Ticker symbol for title.
         template : str
@@ -845,12 +824,13 @@ class _PlotNamespace:
             return fig
 
         # Determine which column contains transaction type
-        # Insider transactions use 'transaction', house trades use 'type'
-        tx_col = (
-            "transaction"
-            if "transaction" in transactions_df_normalized.columns
-            else "type"
-        )
+        # v2 API uses 'transactionType'; fall back to legacy column names
+        if "transactionType" in transactions_df_normalized.columns:
+            tx_col = "transactionType"
+        elif "transaction" in transactions_df_normalized.columns:
+            tx_col = "transaction"
+        else:
+            tx_col = "type"
 
         # Separate buy and sell transactions
         buys = transactions_df_normalized[
@@ -934,12 +914,12 @@ class _PlotNamespace:
         fig.add_bar(
             name="Calls",
             x=df.index,
-            y=df["callCount"],
+            y=df["callVolume"],
             marker_color="rgba(0,190,0,0.6)",
         )
         # Puts (red) - added second so it appears *on top* of Calls
         fig.add_bar(
-            name="Puts", x=df.index, y=df["putCount"], marker_color="rgba(190,0,0,0.6)"
+            name="Puts", x=df.index, y=df["putVolume"], marker_color="rgba(190,0,0,0.6)"
         )
         # Put/Call ratio line (secondary axis)
         fig.add_scatter(

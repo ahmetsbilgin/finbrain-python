@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-03-12
+
+### Added
+
+- **Corporate Lobbying Endpoint**: `fb.corporate_lobbying.ticker("AAPL")` — fetch corporate lobbying filings with income, expenses, registrant details, issue codes, and government entities (`/lobbying/{SYMBOL}`)
+- **Corporate Lobbying Plotting**: `fb.plot.corporate_lobbying()` — visualize lobbying spend (income + expenses) as bars on a secondary y-axis overlaid on a price chart, with hover details showing registrant, quarter, income, and expenses
+- **Async Corporate Lobbying**: Full async support via `AsyncCorporateLobbyingAPI`
+- **Corporate Lobbying Tests**: Unit tests (`tests/test_corporate_lobbying.py`) and integration tests
+
 ## [0.2.0] - 2026-03-09
 
 ### BREAKING CHANGES
@@ -128,6 +137,7 @@ Previous releases...
 
 Previous releases...
 
+[0.2.1]: https://github.com/ahmetsbilgin/finbrain-python/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/ahmetsbilgin/finbrain-python/compare/v0.1.8...v0.2.0
 [0.1.8]: https://github.com/ahmetsbilgin/finbrain-python/compare/v0.1.7...v0.1.8
 [0.1.7]: https://github.com/ahmetsbilgin/finbrain-python/compare/v0.1.6...v0.1.7

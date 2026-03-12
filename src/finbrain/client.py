@@ -23,6 +23,7 @@ from .endpoints.options import OptionsAPI
 from .endpoints.news import NewsAPI
 from .endpoints.screener import ScreenerAPI
 from .endpoints.recent import RecentAPI
+from .endpoints.corporate_lobbying import CorporateLobbyingAPI
 
 
 # Which status codes merit a retry
@@ -75,6 +76,7 @@ class FinBrainClient:
         self.news = NewsAPI(self)
         self.screener = ScreenerAPI(self)
         self.recent = RecentAPI(self)
+        self.corporate_lobbying = CorporateLobbyingAPI(self)
 
     # ---------- private helpers ----------
     def _request(

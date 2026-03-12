@@ -262,6 +262,33 @@ class TestSenateTrades:
 
 
 # =====================================================================
+# Corporate Lobbying
+# =====================================================================
+class TestCorporateLobbying:
+    def test_raw(self, fb):
+        data = fb.corporate_lobbying.ticker(TICKER)
+        assert isinstance(data, dict)
+        assert "filings" in data
+        filings = data["filings"]
+        assert isinstance(filings, list)
+        if len(filings) > 0:
+            assert "date" in filings[0]
+            assert "registrantName" in filings[0]
+            assert "income" in filings[0]
+            assert "expenses" in filings[0]
+
+    def test_dataframe(self, fb):
+        df = fb.corporate_lobbying.ticker(TICKER, as_dataframe=True)
+        assert isinstance(df, pd.DataFrame)
+        if len(df) > 0:
+            assert df.index.name == "date"
+            assert pd.api.types.is_datetime64_any_dtype(df.index)
+            assert "registrantName" in df.columns
+            assert "income" in df.columns
+            assert "expenses" in df.columns
+
+
+# =====================================================================
 # LinkedIn Data
 # =====================================================================
 class TestLinkedInData:

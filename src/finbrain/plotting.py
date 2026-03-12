@@ -752,6 +752,162 @@ class _PlotNamespace:
         return fig.to_json() if as_json else fig
 
     # --------------------------------------------------------------------- #
+    # Corporate Lobbying  → bars on price chart                              #
+    # --------------------------------------------------------------------- #
+    def corporate_lobbying(
+        self,
+        ticker: str,
+        price_data: pd.DataFrame,
+        *,
+        date_from: str | None = None,
+        date_to: str | None = None,
+        as_json: bool = False,
+        show: bool = True,
+        template: str = "plotly_dark",
+        **kwargs,
+    ):
+        """
+        Plot corporate lobbying spend overlaid on a price chart.
+
+        This method requires user-provided historical price data, as FinBrain
+        does not currently offer a price history endpoint.
+
+        Parameters
+        ----------
+        ticker : str
+            Ticker symbol (e.g. ``"AAPL"``).
+        price_data : pandas.DataFrame
+            **User-provided** price history with a DatetimeIndex and a column
+            containing prices (e.g. ``"close"``, ``"Close"``, or ``"price"``).
+            The index must be timezone-naive or UTC.
+        date_from, date_to : str or None, optional
+            Date range for filings in ``YYYY-MM-DD`` format.
+        as_json : bool, default False
+            If ``True``, return JSON string instead of Figure object.
+        show : bool, default True
+            If ``True`` and ``as_json=False``, display the figure immediately.
+        template : str, default "plotly_dark"
+            Plotly template name.
+        **kwargs
+            Additional arguments passed to
+            :meth:`FinBrainClient.corporate_lobbying.ticker`.
+
+        Returns
+        -------
+        plotly.graph_objects.Figure or str or None
+            Figure object, JSON string, or None (when shown).
+
+        Raises
+        ------
+        ValueError
+            If ``price_data`` is empty or missing required price column.
+        """
+        # Validate price_data
+        if price_data.empty:
+            raise ValueError("price_data cannot be empty")
+
+        # Flatten MultiIndex columns if present (e.g., from yf.download())
+        if isinstance(price_data.columns, pd.MultiIndex):
+            price_data = price_data.copy()
+            price_data.columns = price_data.columns.get_level_values(0)
+
+        # Find price column (case-insensitive search)
+        price_col = None
+        for col in ["close", "Close", "price", "Price", "adj_close", "Adj Close"]:
+            if col in price_data.columns:
+                price_col = col
+                break
+        if price_col is None:
+            raise ValueError(
+                f"price_data must contain a price column (e.g. 'close', 'Close', 'price'). "
+                f"Found columns: {price_data.columns.tolist()}"
+            )
+
+        # Fetch lobbying filings
+        filings_df = self._fb.corporate_lobbying.ticker(
+            ticker,
+            date_from=date_from,
+            date_to=date_to,
+            as_dataframe=True,
+            **kwargs,
+        )
+
+        # Normalize timezones
+        price_data_normalized = price_data.copy()
+        if price_data_normalized.index.tz is not None:
+            price_data_normalized.index = price_data_normalized.index.tz_localize(None)
+
+        fig = go.Figure(
+            layout=dict(
+                template=template,
+                title=f"Corporate Lobbying · {ticker}",
+                xaxis_title="Date",
+                hovermode="x unified",
+            )
+        )
+
+        # Plot price line on primary y-axis
+        fig.add_scatter(
+            name="Price",
+            x=price_data_normalized.index,
+            y=price_data_normalized[price_col],
+            mode="lines",
+            line=dict(width=2, color="#02d2ff"),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>Price: $%{y:.2f}<extra></extra>",
+        )
+
+        if not filings_df.empty:
+            filings_normalized = filings_df.copy()
+            if filings_normalized.index.tz is not None:
+                filings_normalized.index = filings_normalized.index.tz_localize(None)
+
+            # Compute total spend per filing (income + expenses)
+            spend = filings_normalized.get("income", 0) + filings_normalized.get(
+                "expenses", 0
+            )
+
+            hover_text = []
+            for _, row in filings_normalized.iterrows():
+                registrant = row.get("registrantName", "N/A")
+                quarter = row.get("quarter", "")
+                income = row.get("income", 0)
+                expenses = row.get("expenses", 0)
+                hover_text.append(
+                    f"Registrant: {registrant}<br>"
+                    f"Quarter: {quarter}<br>"
+                    f"Income: ${income:,.0f}<br>"
+                    f"Expenses: ${expenses:,.0f}"
+                )
+
+            # Plot lobbying spend as bars on secondary y-axis
+            fig.add_bar(
+                name="Lobbying Spend",
+                x=filings_normalized.index,
+                y=spend,
+                marker_color="rgba(249,200,14,0.6)",
+                yaxis="y2",
+                hovertext=hover_text,
+                hovertemplate="<b>%{x|%Y-%m-%d}</b><br>%{hovertext}<extra></extra>",
+            )
+
+        fig.update_layout(
+            yaxis=dict(title="Price", showgrid=True),
+            yaxis2=dict(
+                title="Lobbying Spend ($)",
+                overlaying="y",
+                side="right",
+                showgrid=False,
+                zeroline=False,
+                rangemode="tozero",
+            ),
+        )
+
+        if show and not as_json:
+            fig.show()
+            return None
+        return fig.to_json() if as_json else fig
+
+    # --------------------------------------------------------------------- #
     # Helper methods                                                         #
     # --------------------------------------------------------------------- #
 

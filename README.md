@@ -67,6 +67,12 @@ fb.senate_trades.ticker("META",
                         date_to="2025-06-30",
                         as_dataframe=True)
 
+# ---------- corporate lobbying ----------
+fb.corporate_lobbying.ticker("AAPL",
+                             date_from="2024-01-01",
+                             date_to="2025-06-30",
+                             as_dataframe=True)
+
 # ---------- insider transactions ----------
 fb.insider_transactions.ticker("AMZN", as_dataframe=True)
 
@@ -179,7 +185,7 @@ fb.plot.sentiments("AMZN",
                    date_from="2025-01-01",
                    date_to="2025-06-30")
 
-# ---------- Insider Transactions, House & Senate Trades (requires user price data) ----------
+# ---------- Insider Transactions, House & Senate Trades, Corporate Lobbying (requires user price data) ----------
 # These plots overlay transaction markers on a price chart.
 # Since FinBrain doesn't provide historical prices, you must provide your own:
 
@@ -206,6 +212,12 @@ fb.plot.senate_trades("META",
                       price_data=price_df,
                       date_from="2025-01-01",
                       date_to="2025-06-30")
+
+# Plot corporate lobbying spend on your price chart
+fb.plot.corporate_lobbying("AAPL",
+                           price_data=price_df,
+                           date_from="2024-01-01",
+                           date_to="2025-06-30")
 ```
 
 **Price Data Requirements:**
@@ -250,6 +262,7 @@ fb = FinBrainClient()  # reads from FINBRAIN_API_KEY env var
 | Analyst ratings      | `client.analyst_ratings.ticker()`        | `/analyst-ratings/{SYMBOL}`                 |
 | House trades         | `client.house_trades.ticker()`           | `/congress/house/{SYMBOL}`                  |
 | Senate trades        | `client.senate_trades.ticker()`          | `/congress/senate/{SYMBOL}`                 |
+| Corporate lobbying   | `client.corporate_lobbying.ticker()`     | `/lobbying/{SYMBOL}`                        |
 | Insider transactions | `client.insider_transactions.ticker()`   | `/insider-trading/{SYMBOL}`                 |
 | LinkedIn             | `client.linkedin_data.ticker()`          | `/linkedin/{SYMBOL}`                        |
 | Options – Put/Call   | `client.options.put_call()`              | `/put-call-ratio/{SYMBOL}`                  |

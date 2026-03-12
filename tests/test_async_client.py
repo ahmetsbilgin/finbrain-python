@@ -71,3 +71,4 @@ async def test_async_endpoints_exist():
         assert hasattr(client, "insider_transactions")
         assert hasattr(client, "linkedin_data")
         assert hasattr(client, "options")
+        assert hasattr(client, "corporate_lobbying")

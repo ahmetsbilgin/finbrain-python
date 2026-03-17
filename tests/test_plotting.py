@@ -152,19 +152,17 @@ class MockRedditMentionsClient:
             }).set_index("date")
             return df
 
+    class screener:
         @staticmethod
-        def screener(*args, **kwargs):
-            return {
-                "data": [
-                    {"symbol": "TSLA", "name": "Tesla", "date": "2024-01-01T08:00:00Z",
-                     "totalMentions": 120, "subreddits": {"wallstreetbets": 85, "stocks": 12}},
-                    {"symbol": "AAPL", "name": "Apple", "date": "2024-01-01T08:00:00Z",
-                     "totalMentions": 45, "subreddits": {"wallstreetbets": 30, "stocks": 8}},
-                    {"symbol": "NVDA", "name": "NVIDIA", "date": "2024-01-01T08:00:00Z",
-                     "totalMentions": 80, "subreddits": {"wallstreetbets": 60, "stocks": 5}},
-                ],
-                "summary": {},
-            }
+        def reddit_mentions(*args, **kwargs):
+            return [
+                {"symbol": "TSLA", "name": "Tesla", "date": "2024-01-01T08:00:00Z",
+                 "totalMentions": 120, "subreddits": {"wallstreetbets": 85, "stocks": 12}},
+                {"symbol": "AAPL", "name": "Apple", "date": "2024-01-01T08:00:00Z",
+                 "totalMentions": 45, "subreddits": {"wallstreetbets": 30, "stocks": 8}},
+                {"symbol": "NVDA", "name": "NVIDIA", "date": "2024-01-01T08:00:00Z",
+                 "totalMentions": 80, "subreddits": {"wallstreetbets": 60, "stocks": 5}},
+            ]
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -480,11 +478,11 @@ def test_reddit_mentions_as_json():
     assert isinstance(result, str)
 
 
-# ── reddit_mentions_screener ──────────────────────────────────────────────
+# ── reddit_mentions_top ──────────────────────────────────────────────
 
-def test_reddit_mentions_screener_plot():
+def test_reddit_mentions_top_plot():
     plot = _PlotNamespace(MockRedditMentionsClient())
-    fig = plot.reddit_mentions_screener(show=False)
+    fig = plot.reddit_mentions_top(show=False)
 
     assert isinstance(fig, go.Figure)
     # 2 subreddits → 2 bar traces (stocks, wallstreetbets)
@@ -499,9 +497,9 @@ def test_reddit_mentions_screener_plot():
     assert symbols[0] == "AAPL"  # lowest mentions
 
 
-def test_reddit_mentions_screener_top_n():
+def test_reddit_mentions_top_top_n():
     plot = _PlotNamespace(MockRedditMentionsClient())
-    fig = plot.reddit_mentions_screener(top_n=2, show=False)
+    fig = plot.reddit_mentions_top(top_n=2, show=False)
 
     assert isinstance(fig, go.Figure)
     # Only top 2 tickers
@@ -512,43 +510,40 @@ def test_reddit_mentions_screener_top_n():
     assert "AAPL" not in symbols
 
 
-def test_reddit_mentions_screener_empty_data():
+def test_reddit_mentions_top_empty_data():
     class EmptyScreenerClient:
-        class reddit_mentions:
+        class screener:
             @staticmethod
-            def screener(*args, **kwargs):
-                return {"data": [], "summary": {}}
+            def reddit_mentions(*args, **kwargs):
+                return []
 
     plot = _PlotNamespace(EmptyScreenerClient())
     with pytest.raises(ValueError, match="No screener data returned"):
-        plot.reddit_mentions_screener(show=False)
+        plot.reddit_mentions_top(show=False)
 
 
-def test_reddit_mentions_screener_as_json():
+def test_reddit_mentions_top_as_json():
     plot = _PlotNamespace(MockRedditMentionsClient())
-    result = plot.reddit_mentions_screener(show=False, as_json=True)
+    result = plot.reddit_mentions_top(show=False, as_json=True)
     assert isinstance(result, str)
 
 
-def test_reddit_mentions_screener_latest_snapshot():
+def test_reddit_mentions_top_latest_snapshot():
     """Verify that only the latest snapshot per ticker is used."""
 
     class MultiSnapshotClient:
-        class reddit_mentions:
+        class screener:
             @staticmethod
-            def screener(*args, **kwargs):
-                return {
-                    "data": [
-                        {"symbol": "TSLA", "date": "2024-01-01T04:00:00Z",
-                         "totalMentions": 50, "subreddits": {"wsb": 30}},
-                        {"symbol": "TSLA", "date": "2024-01-01T08:00:00Z",
-                         "totalMentions": 120, "subreddits": {"wsb": 85}},
-                    ],
-                    "summary": {},
-                }
+            def reddit_mentions(*args, **kwargs):
+                return [
+                    {"symbol": "TSLA", "date": "2024-01-01T04:00:00Z",
+                     "totalMentions": 50, "subreddits": {"wsb": 30}},
+                    {"symbol": "TSLA", "date": "2024-01-01T08:00:00Z",
+                     "totalMentions": 120, "subreddits": {"wsb": 85}},
+                ]
 
     plot = _PlotNamespace(MultiSnapshotClient())
-    fig = plot.reddit_mentions_screener(show=False)
+    fig = plot.reddit_mentions_top(show=False)
 
     # Should use the 08:00 snapshot (120 mentions), not 04:00 (50)
     assert fig.data[0].x == (85,)  # wsb=85 from the latest snapshot

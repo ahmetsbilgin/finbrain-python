@@ -79,9 +79,6 @@ fb.reddit_mentions.ticker("TSLA",
                           date_to="2026-03-17",
                           as_dataframe=True)
 
-# screener — cross-ticker Reddit mentions
-fb.reddit_mentions.screener(market="S&P 500", limit=100, as_dataframe=True)
-
 # ---------- insider transactions ----------
 fb.insider_transactions.ticker("AMZN", as_dataframe=True)
 
@@ -113,6 +110,7 @@ fb.news.ticker("AMZN", limit=20, as_dataframe=True)
 fb.screener.sentiment(market="S&P 500", as_dataframe=True)
 fb.screener.predictions_daily(limit=100, as_dataframe=True)
 fb.screener.insider_trading(limit=50)
+fb.screener.reddit_mentions(limit=100, as_dataframe=True)
 
 # ---------- recent data ----------
 fb.recent.news(limit=100, as_dataframe=True)
@@ -238,10 +236,10 @@ fb.plot.reddit_mentions("TSLA",
 ```python
 # ---------- Reddit Mentions Screener Chart (no price data needed) ----------
 # Stacked horizontal bar chart of top 15 most mentioned tickers
-fb.plot.reddit_mentions_screener(market="S&P 500")
+fb.plot.reddit_mentions_top(market="S&P 500")
 
 # Customize the number of tickers shown
-fb.plot.reddit_mentions_screener(top_n=10, region="US")
+fb.plot.reddit_mentions_top(top_n=10, region="US")
 ```
 
 **Price Data Requirements:**
@@ -288,13 +286,13 @@ fb = FinBrainClient()  # reads from FINBRAIN_API_KEY env var
 | Senate trades        | `client.senate_trades.ticker()`          | `/congress/senate/{SYMBOL}`                 |
 | Corporate lobbying   | `client.corporate_lobbying.ticker()`     | `/lobbying/{SYMBOL}`                        |
 | Reddit mentions      | `client.reddit_mentions.ticker()`        | `/reddit-mentions/{SYMBOL}`                 |
-|                      | `client.reddit_mentions.screener()`      | `/screener/reddit-mentions`                 |
 | Insider transactions | `client.insider_transactions.ticker()`   | `/insider-trading/{SYMBOL}`                 |
 | LinkedIn             | `client.linkedin_data.ticker()`          | `/linkedin/{SYMBOL}`                        |
 | Options – Put/Call   | `client.options.put_call()`              | `/put-call-ratio/{SYMBOL}`                  |
 | Screener             | `client.screener.sentiment()`            | `/screener/sentiment`                       |
 |                      | `client.screener.predictions_daily()`    | `/screener/predictions/daily`               |
 |                      | `client.screener.insider_trading()`      | `/screener/insider-trading`                 |
+|                      | `client.screener.reddit_mentions()`      | `/screener/reddit-mentions`                 |
 |                      | ... and 8 more screener methods          |                                             |
 | Recent               | `client.recent.news()`                   | `/recent/news`                              |
 |                      | `client.recent.analyst_ratings()`        | `/recent/analyst-ratings`                   |

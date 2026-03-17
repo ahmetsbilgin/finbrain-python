@@ -213,3 +213,17 @@ class ScreenerAPI:
         """Screen monthly (12-month) predictions across tickers."""
         params = self._build_params(limit=limit, market=market, region=region)
         return self._get("screener/predictions/monthly", params, as_dataframe)
+
+    # ── reddit mentions ────────────────────────────────────────
+
+    def reddit_mentions(
+        self,
+        *,
+        limit: int | None = None,
+        market: str | None = None,
+        region: str | None = None,
+        as_dataframe: bool = False,
+    ) -> List[Dict[str, Any]] | pd.DataFrame:
+        """Screen Reddit mention counts across tickers."""
+        params = self._build_params(limit=limit, market=market, region=region)
+        return self._get("screener/reddit-mentions", params, as_dataframe)

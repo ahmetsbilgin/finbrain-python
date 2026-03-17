@@ -319,19 +319,16 @@ class TestRedditMentions:
         assert "_all" in df["subreddit"].values
 
     def test_screener_raw(self, fb):
-        data = fb.reddit_mentions.screener()
-        assert isinstance(data, dict)
-        assert "data" in data
-        rows = data["data"]
-        assert isinstance(rows, list)
-        assert len(rows) > 0
-        row = rows[0]
+        data = fb.screener.reddit_mentions()
+        assert isinstance(data, list)
+        assert len(data) > 0
+        row = data[0]
         assert "symbol" in row
         assert "totalMentions" in row
         assert "subreddits" in row
 
     def test_screener_dataframe(self, fb):
-        df = fb.reddit_mentions.screener(as_dataframe=True)
+        df = fb.screener.reddit_mentions(as_dataframe=True)
         assert isinstance(df, pd.DataFrame)
         assert len(df) > 0
 

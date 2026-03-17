@@ -1057,7 +1057,7 @@ class _PlotNamespace:
     # --------------------------------------------------------------------- #
     # Reddit Mentions Screener  → stacked horizontal bars (top N tickers)    #
     # --------------------------------------------------------------------- #
-    def reddit_mentions_screener(
+    def reddit_mentions_top(
         self,
         *,
         top_n: int = 15,
@@ -1091,20 +1091,20 @@ class _PlotNamespace:
             Plotly template name.
         **kwargs
             Additional arguments passed to
-            :meth:`FinBrainClient.reddit_mentions.screener`.
+            :meth:`FinBrainClient.screener.reddit_mentions`.
 
         Returns
         -------
         plotly.graph_objects.Figure or str or None
         """
-        data = self._fb.reddit_mentions.screener(
+        data = self._fb.screener.reddit_mentions(
             market=market,
             region=region,
             limit=limit,
             **kwargs,
         )
 
-        rows = data.get("data", [])
+        rows = data if isinstance(data, list) else data.get("data", [])
         if not rows:
             raise ValueError("No screener data returned")
 

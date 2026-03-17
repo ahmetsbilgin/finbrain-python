@@ -117,11 +117,10 @@ def test_reddit_mentions_screener_raw_ok(client, _activate_responses):
 
     stub_json(_activate_responses, "GET", path, payload)
 
-    data = client.reddit_mentions.screener()
-    assert isinstance(data["data"], list)
-    assert data["data"][0]["symbol"] == "TSLA"
-    assert data["data"][0]["totalMentions"] == 120
-    assert data["summary"]["totalTickers"] == 1
+    data = client.screener.reddit_mentions()
+    assert isinstance(data, list)
+    assert data[0]["symbol"] == "TSLA"
+    assert data[0]["totalMentions"] == 120
 
 
 # ─────────── screener DataFrame ─────────────────────────────────────────
@@ -155,14 +154,9 @@ def test_reddit_mentions_screener_dataframe_ok(client, _activate_responses):
 
     stub_json(_activate_responses, "GET", path, payload)
 
-    df = client.reddit_mentions.screener(as_dataframe=True)
+    df = client.screener.reddit_mentions(as_dataframe=True)
 
     assert isinstance(df, pd.DataFrame)
     assert len(df) == 2
-    assert df.index.name == "date"
-    assert pd.api.types.is_datetime64_any_dtype(df.index)
-    # Verify timestamps preserve time component (UTC-aware from ISO Z suffix)
-    assert pd.Timestamp("2026-03-17 08:00:00", tz="UTC") in df.index
-    assert pd.Timestamp("2026-03-17 12:00:00", tz="UTC") in df.index
+    assert df.index.name == "symbol"
     assert "totalMentions" in df.columns
-    assert "symbol" in df.columns

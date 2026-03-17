@@ -46,34 +46,3 @@ class AsyncRedditMentionsAPI:
             return df
 
         return data
-
-    async def screener(
-        self,
-        *,
-        limit: int | None = None,
-        market: str | None = None,
-        region: str | None = None,
-        as_dataframe: bool = False,
-    ) -> Dict[str, Any] | pd.DataFrame:
-        """Get recent Reddit mention counts across all tickers (async)."""
-        params: Dict[str, str] = {}
-        if limit is not None:
-            params["limit"] = str(limit)
-        if market:
-            params["market"] = market
-        if region:
-            params["region"] = region
-
-        data: Dict[str, Any] = await self._c._request(
-            "GET", "screener/reddit-mentions", params=params
-        )
-
-        if as_dataframe:
-            rows: List[Dict[str, Any]] = data.get("data", [])
-            df = pd.DataFrame(rows)
-            if not df.empty and "date" in df.columns:
-                df["date"] = pd.to_datetime(df["date"])
-                df.set_index("date", inplace=True)
-            return df
-
-        return data

@@ -5,15 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2026-03-17
+
+### Changed
+
+- **Reddit Mentions Screener**: Moved from `fb.reddit_mentions.screener()` to `fb.screener.reddit_mentions()` for consistency with other screener endpoints
+- **Plotting rename**: `fb.plot.reddit_mentions_screener()` renamed to `fb.plot.reddit_mentions_top()` to better reflect the chart's purpose (top N most mentioned tickers)
+
 ## [0.2.2] - 2026-03-17
 
 ### Added
 
 - **Reddit Mentions Endpoint**: `fb.reddit_mentions.ticker("TSLA")` — fetch per-subreddit mention counts with full timestamps (sampled every 4 hours) (`/reddit-mentions/{SYMBOL}`)
-- **Reddit Mentions Screener**: `fb.reddit_mentions.screener()` — cross-ticker Reddit mentions with aggregated totals and per-subreddit breakdowns (`/screener/reddit-mentions`)
-- **Reddit Mentions Plotting**: `fb.plot.reddit_mentions()` — stacked bars per subreddit overlaid on a price chart; `fb.plot.reddit_mentions_screener()` — horizontal stacked bar chart of top N most mentioned tickers from the latest screener snapshot
+- **Reddit Mentions Screener**: `fb.screener.reddit_mentions()` — cross-ticker Reddit mentions with aggregated totals and per-subreddit breakdowns (`/screener/reddit-mentions`)
+- **Reddit Mentions Plotting**: `fb.plot.reddit_mentions()` — stacked bars per subreddit overlaid on a price chart; `fb.plot.reddit_mentions_top()` — horizontal stacked bar chart of top N most mentioned tickers
 - **Async Reddit Mentions**: Full async support via `AsyncRedditMentionsAPI`
-- **Reddit Mentions Tests**: Unit tests (`tests/test_reddit_mentions.py`) covering ticker, screener, DataFrame, and error handling; integration tests against the live API; functional plotting tests for `reddit_mentions` and `reddit_mentions_screener`
+- **Reddit Mentions Tests**: Unit tests, integration tests, and functional plotting tests
 - **Plotting Test Coverage**: Added functional tests for all 11 plotting methods
 
 ## [0.2.1] - 2026-03-12

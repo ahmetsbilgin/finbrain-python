@@ -73,6 +73,15 @@ fb.corporate_lobbying.ticker("AAPL",
                              date_to="2025-06-30",
                              as_dataframe=True)
 
+# ---------- reddit mentions ----------
+fb.reddit_mentions.ticker("TSLA",
+                          date_from="2026-03-01",
+                          date_to="2026-03-17",
+                          as_dataframe=True)
+
+# screener — cross-ticker Reddit mentions
+fb.reddit_mentions.screener(market="S&P 500", limit=100, as_dataframe=True)
+
 # ---------- insider transactions ----------
 fb.insider_transactions.ticker("AMZN", as_dataframe=True)
 
@@ -218,6 +227,21 @@ fb.plot.corporate_lobbying("AAPL",
                            price_data=price_df,
                            date_from="2024-01-01",
                            date_to="2025-06-30")
+
+# Plot Reddit mentions (stacked bars per subreddit) on your price chart
+fb.plot.reddit_mentions("TSLA",
+                        price_data=price_df,
+                        date_from="2026-03-01",
+                        date_to="2026-03-17")
+```
+
+```python
+# ---------- Reddit Mentions Screener Chart (no price data needed) ----------
+# Stacked horizontal bar chart of top 15 most mentioned tickers
+fb.plot.reddit_mentions_screener(market="S&P 500")
+
+# Customize the number of tickers shown
+fb.plot.reddit_mentions_screener(top_n=10, region="US")
 ```
 
 **Price Data Requirements:**
@@ -263,6 +287,8 @@ fb = FinBrainClient()  # reads from FINBRAIN_API_KEY env var
 | House trades         | `client.house_trades.ticker()`           | `/congress/house/{SYMBOL}`                  |
 | Senate trades        | `client.senate_trades.ticker()`          | `/congress/senate/{SYMBOL}`                 |
 | Corporate lobbying   | `client.corporate_lobbying.ticker()`     | `/lobbying/{SYMBOL}`                        |
+| Reddit mentions      | `client.reddit_mentions.ticker()`        | `/reddit-mentions/{SYMBOL}`                 |
+|                      | `client.reddit_mentions.screener()`      | `/screener/reddit-mentions`                 |
 | Insider transactions | `client.insider_transactions.ticker()`   | `/insider-trading/{SYMBOL}`                 |
 | LinkedIn             | `client.linkedin_data.ticker()`          | `/linkedin/{SYMBOL}`                        |
 | Options – Put/Call   | `client.options.put_call()`              | `/put-call-ratio/{SYMBOL}`                  |

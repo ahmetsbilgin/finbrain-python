@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-03-17
+
+### Added
+
+- **Reddit Mentions Endpoint**: `fb.reddit_mentions.ticker("TSLA")` — fetch per-subreddit mention counts with full timestamps (sampled every 4 hours) (`/reddit-mentions/{SYMBOL}`)
+- **Reddit Mentions Screener**: `fb.reddit_mentions.screener()` — cross-ticker Reddit mentions with aggregated totals and per-subreddit breakdowns (`/screener/reddit-mentions`)
+- **Reddit Mentions Plotting**: `fb.plot.reddit_mentions()` — stacked bars per subreddit overlaid on a price chart; `fb.plot.reddit_mentions_screener()` — horizontal stacked bar chart of top N most mentioned tickers from the latest screener snapshot
+- **Async Reddit Mentions**: Full async support via `AsyncRedditMentionsAPI`
+- **Reddit Mentions Tests**: Unit tests (`tests/test_reddit_mentions.py`) covering ticker, screener, DataFrame, and error handling
+
 ## [0.2.1] - 2026-03-12
 
 ### Added

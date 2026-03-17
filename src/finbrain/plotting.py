@@ -908,6 +908,253 @@ class _PlotNamespace:
         return fig.to_json() if as_json else fig
 
     # --------------------------------------------------------------------- #
+    # Reddit Mentions  → bars on price chart                                 #
+    # --------------------------------------------------------------------- #
+    def reddit_mentions(
+        self,
+        ticker: str,
+        price_data: pd.DataFrame,
+        *,
+        date_from: str | None = None,
+        date_to: str | None = None,
+        as_json: bool = False,
+        show: bool = True,
+        template: str = "plotly_dark",
+        **kwargs,
+    ):
+        """
+        Plot Reddit mention counts overlaid on a price chart.
+
+        This method requires user-provided historical price data, as FinBrain
+        does not currently offer a price history endpoint.
+
+        Parameters
+        ----------
+        ticker : str
+            Ticker symbol (e.g. ``"AAPL"``).
+        price_data : pandas.DataFrame
+            **User-provided** price history with a DatetimeIndex and a column
+            containing prices (e.g. ``"close"``, ``"Close"``, or ``"price"``).
+            The index must be timezone-naive or UTC.
+        date_from, date_to : str or None, optional
+            Date range for mentions in ``YYYY-MM-DD`` format.
+        as_json : bool, default False
+            If ``True``, return JSON string instead of Figure object.
+        show : bool, default True
+            If ``True`` and ``as_json=False``, display the figure immediately.
+        template : str, default "plotly_dark"
+            Plotly template name.
+        **kwargs
+            Additional arguments passed to
+            :meth:`FinBrainClient.reddit_mentions.ticker`.
+
+        Returns
+        -------
+        plotly.graph_objects.Figure or str or None
+            Figure object, JSON string, or None (when shown).
+
+        Raises
+        ------
+        ValueError
+            If ``price_data`` is empty or missing required price column.
+        """
+        # Validate price_data
+        if price_data.empty:
+            raise ValueError("price_data cannot be empty")
+
+        # Flatten MultiIndex columns if present (e.g., from yf.download())
+        if isinstance(price_data.columns, pd.MultiIndex):
+            price_data = price_data.copy()
+            price_data.columns = price_data.columns.get_level_values(0)
+
+        # Find price column (case-insensitive search)
+        price_col = None
+        for col in ["close", "Close", "price", "Price", "adj_close", "Adj Close"]:
+            if col in price_data.columns:
+                price_col = col
+                break
+        if price_col is None:
+            raise ValueError(
+                f"price_data must contain a price column (e.g. 'close', 'Close', 'price'). "
+                f"Found columns: {price_data.columns.tolist()}"
+            )
+
+        # Fetch Reddit mentions
+        mentions_df = self._fb.reddit_mentions.ticker(
+            ticker,
+            date_from=date_from,
+            date_to=date_to,
+            as_dataframe=True,
+            **kwargs,
+        )
+
+        # Normalize timezones
+        price_data_normalized = price_data.copy()
+        if price_data_normalized.index.tz is not None:
+            price_data_normalized.index = price_data_normalized.index.tz_localize(None)
+
+        fig = go.Figure(
+            layout=dict(
+                template=template,
+                title=f"Reddit Mentions · {ticker}",
+                xaxis_title="Date",
+                hovermode="x unified",
+            )
+        )
+
+        # Plot price line on primary y-axis
+        fig.add_scatter(
+            name="Price",
+            x=price_data_normalized.index,
+            y=price_data_normalized[price_col],
+            mode="lines",
+            line=dict(width=2, color="#02d2ff"),
+            hovertemplate="<b>%{x|%Y-%m-%d %H:%M}</b><br>Price: $%{y:.2f}<extra></extra>",
+        )
+
+        if not mentions_df.empty:
+            mentions_normalized = mentions_df.copy()
+            if mentions_normalized.index.tz is not None:
+                mentions_normalized.index = mentions_normalized.index.tz_localize(None)
+
+            # Exclude _all (aggregate) — use individual subreddits for stacked bars
+            per_sub = mentions_normalized[
+                mentions_normalized["subreddit"] != "_all"
+            ]
+
+            if not per_sub.empty:
+                for subreddit in sorted(per_sub["subreddit"].unique()):
+                    sub_data = per_sub[per_sub["subreddit"] == subreddit]
+                    fig.add_bar(
+                        name=f"r/{subreddit}",
+                        x=sub_data.index,
+                        y=sub_data["mentions"],
+                        yaxis="y2",
+                        hovertemplate=(
+                            "<b>%{x|%Y-%m-%d %H:%M}</b><br>"
+                            f"r/{subreddit}: " + "%{y:,}<extra></extra>"
+                        ),
+                    )
+
+        fig.update_layout(
+            barmode="stack",
+            yaxis=dict(title="Price", showgrid=True),
+            yaxis2=dict(
+                title="Mentions",
+                overlaying="y",
+                side="right",
+                showgrid=False,
+                zeroline=False,
+                rangemode="tozero",
+            ),
+        )
+
+        if show and not as_json:
+            fig.show()
+            return None
+        return fig.to_json() if as_json else fig
+
+    # --------------------------------------------------------------------- #
+    # Reddit Mentions Screener  → stacked horizontal bars (top N tickers)    #
+    # --------------------------------------------------------------------- #
+    def reddit_mentions_screener(
+        self,
+        *,
+        top_n: int = 15,
+        market: str | None = None,
+        region: str | None = None,
+        limit: int | None = None,
+        as_json: bool = False,
+        show: bool = True,
+        template: str = "plotly_dark",
+        **kwargs,
+    ):
+        """
+        Plot a stacked horizontal bar chart of the most mentioned tickers
+        from the latest Reddit mentions screener snapshot.
+
+        Parameters
+        ----------
+        top_n : int, default 15
+            Number of top-mentioned tickers to display.
+        market : str or None, optional
+            Filter by market name (e.g. ``"S&P 500"``).
+        region : str or None, optional
+            Filter by region (e.g. ``"US"``).
+        limit : int or None, optional
+            Maximum records to fetch from the screener API.
+        as_json : bool, default False
+            If ``True``, return JSON string instead of Figure object.
+        show : bool, default True
+            If ``True`` and ``as_json=False``, display the figure immediately.
+        template : str, default "plotly_dark"
+            Plotly template name.
+        **kwargs
+            Additional arguments passed to
+            :meth:`FinBrainClient.reddit_mentions.screener`.
+
+        Returns
+        -------
+        plotly.graph_objects.Figure or str or None
+        """
+        data = self._fb.reddit_mentions.screener(
+            market=market,
+            region=region,
+            limit=limit,
+            **kwargs,
+        )
+
+        rows = data.get("data", [])
+        if not rows:
+            raise ValueError("No screener data returned")
+
+        # Keep only the latest snapshot per ticker
+        latest: dict[str, dict] = {}
+        for row in rows:
+            sym = row["symbol"]
+            if sym not in latest or row["date"] > latest[sym]["date"]:
+                latest[sym] = row
+
+        # Sort by totalMentions descending, take top N
+        ranked = sorted(latest.values(), key=lambda r: r.get("totalMentions", 0), reverse=True)
+        top = ranked[:top_n]
+
+        # Reverse so the highest-mentioned ticker is at the top of the chart
+        top = list(reversed(top))
+
+        symbols = [r["symbol"] for r in top]
+
+        # Collect all subreddit names across top tickers
+        all_subs: set[str] = set()
+        for r in top:
+            all_subs.update(r.get("subreddits", {}).keys())
+
+        fig = go.Figure(
+            layout=dict(
+                template=template,
+                title=f"Reddit Mentions · Top {len(top)} Tickers",
+                xaxis_title="Mentions",
+                hovermode="y unified",
+                barmode="stack",
+            )
+        )
+
+        for subreddit in sorted(all_subs):
+            values = [r.get("subreddits", {}).get(subreddit, 0) for r in top]
+            fig.add_bar(
+                name=f"r/{subreddit}",
+                y=symbols,
+                x=values,
+                orientation="h",
+                hovertemplate=f"r/{subreddit}: " + "%{x:,}<extra></extra>",
+            )
+
+        if show and not as_json:
+            fig.show()
+            return None
+        return fig.to_json() if as_json else fig
+
+    # --------------------------------------------------------------------- #
     # Helper methods                                                         #
     # --------------------------------------------------------------------- #
 

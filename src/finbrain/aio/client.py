@@ -23,6 +23,7 @@ from .endpoints.news import AsyncNewsAPI
 from .endpoints.screener import AsyncScreenerAPI
 from .endpoints.recent import AsyncRecentAPI
 from .endpoints.corporate_lobbying import AsyncCorporateLobbyingAPI
+from .endpoints.reddit_mentions import AsyncRedditMentionsAPI
 
 
 # Which status codes merit a retry
@@ -82,6 +83,7 @@ class AsyncFinBrainClient:
         self.screener = AsyncScreenerAPI(self)
         self.recent = AsyncRecentAPI(self)
         self.corporate_lobbying = AsyncCorporateLobbyingAPI(self)
+        self.reddit_mentions = AsyncRedditMentionsAPI(self)
 
     async def __aenter__(self) -> "AsyncFinBrainClient":
         """Context manager entry."""

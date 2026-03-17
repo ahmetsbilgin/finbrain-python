@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Reddit Mentions Screener**: `fb.reddit_mentions.screener()` — cross-ticker Reddit mentions with aggregated totals and per-subreddit breakdowns (`/screener/reddit-mentions`)
 - **Reddit Mentions Plotting**: `fb.plot.reddit_mentions()` — stacked bars per subreddit overlaid on a price chart; `fb.plot.reddit_mentions_screener()` — horizontal stacked bar chart of top N most mentioned tickers from the latest screener snapshot
 - **Async Reddit Mentions**: Full async support via `AsyncRedditMentionsAPI`
-- **Reddit Mentions Tests**: Unit tests (`tests/test_reddit_mentions.py`) covering ticker, screener, DataFrame, and error handling
+- **Reddit Mentions Tests**: Unit tests (`tests/test_reddit_mentions.py`) covering ticker, screener, DataFrame, and error handling; integration tests against the live API; functional plotting tests for `reddit_mentions` and `reddit_mentions_screener`
+- **Plotting Test Coverage**: Added functional tests for all 11 plotting methods
 
 ## [0.2.1] - 2026-03-12
 

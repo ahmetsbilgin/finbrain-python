@@ -289,6 +289,54 @@ class TestCorporateLobbying:
 
 
 # =====================================================================
+# Reddit Mentions
+# =====================================================================
+class TestRedditMentions:
+    def test_raw(self, fb):
+        data = fb.reddit_mentions.ticker("TSLA")
+        assert isinstance(data, dict)
+        assert "data" in data
+        rows = data["data"]
+        assert isinstance(rows, list)
+        assert len(rows) > 0
+        row = rows[0]
+        assert "date" in row
+        assert "subreddit" in row
+        assert "mentions" in row
+
+    def test_dataframe(self, fb):
+        df = fb.reddit_mentions.ticker("TSLA", as_dataframe=True)
+        assert isinstance(df, pd.DataFrame)
+        assert len(df) > 0
+        assert df.index.name == "date"
+        assert pd.api.types.is_datetime64_any_dtype(df.index)
+        assert "subreddit" in df.columns
+        assert "mentions" in df.columns
+        assert pd.api.types.is_numeric_dtype(df["mentions"])
+
+    def test_has_all_subreddit(self, fb):
+        df = fb.reddit_mentions.ticker("TSLA", as_dataframe=True)
+        assert "_all" in df["subreddit"].values
+
+    def test_screener_raw(self, fb):
+        data = fb.reddit_mentions.screener()
+        assert isinstance(data, dict)
+        assert "data" in data
+        rows = data["data"]
+        assert isinstance(rows, list)
+        assert len(rows) > 0
+        row = rows[0]
+        assert "symbol" in row
+        assert "totalMentions" in row
+        assert "subreddits" in row
+
+    def test_screener_dataframe(self, fb):
+        df = fb.reddit_mentions.screener(as_dataframe=True)
+        assert isinstance(df, pd.DataFrame)
+        assert len(df) > 0
+
+
+# =====================================================================
 # LinkedIn Data
 # =====================================================================
 class TestLinkedInData:

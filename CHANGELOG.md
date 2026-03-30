@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.4] - 2026-03-30
+
+### Added
+
+- **Government Contracts Endpoint**: `fb.government_contracts.ticker("LMT")` — fetch U.S. government contract awards with award amounts, agencies, NAICS codes, and descriptions (`/government-contracts/{SYMBOL}`)
+- **Government Contracts Screener**: `fb.screener.government_contracts()` — cross-ticker government contracts with summary stats (`/screener/government-contracts`)
+- **Government Contracts Plotting**: `fb.plot.government_contracts()` — visualize contract award amounts as bars on a secondary y-axis overlaid on a price chart, with hover details showing agency, NAICS description, and contract description
+- **Async Government Contracts**: Full async support via `AsyncGovernmentContractsAPI`
+- **Government Contracts Tests**: Unit tests (`tests/test_government_contracts.py`), screener tests, integration tests, and plotting tests
+
 ## [0.2.3] - 2026-03-17
 
 ### Changed

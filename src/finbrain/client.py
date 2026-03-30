@@ -25,6 +25,7 @@ from .endpoints.screener import ScreenerAPI
 from .endpoints.recent import RecentAPI
 from .endpoints.corporate_lobbying import CorporateLobbyingAPI
 from .endpoints.reddit_mentions import RedditMentionsAPI
+from .endpoints.government_contracts import GovernmentContractsAPI
 
 
 # Which status codes merit a retry
@@ -79,6 +80,7 @@ class FinBrainClient:
         self.recent = RecentAPI(self)
         self.corporate_lobbying = CorporateLobbyingAPI(self)
         self.reddit_mentions = RedditMentionsAPI(self)
+        self.government_contracts = GovernmentContractsAPI(self)
 
     # ---------- private helpers ----------
     def _request(

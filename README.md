@@ -79,6 +79,13 @@ fb.reddit_mentions.ticker("TSLA",
                           date_to="2026-03-17",
                           as_dataframe=True)
 
+# ---------- government contracts ----------
+fb.government_contracts.ticker("LMT",
+                               date_from="2025-01-01",
+                               date_to="2025-12-31",
+                               limit=50,
+                               as_dataframe=True)
+
 # ---------- insider transactions ----------
 fb.insider_transactions.ticker("AMZN", as_dataframe=True)
 
@@ -111,6 +118,7 @@ fb.screener.sentiment(market="S&P 500", as_dataframe=True)
 fb.screener.predictions_daily(limit=100, as_dataframe=True)
 fb.screener.insider_trading(limit=50)
 fb.screener.reddit_mentions(limit=100, as_dataframe=True)
+fb.screener.government_contracts(limit=100, as_dataframe=True)
 
 # ---------- recent data ----------
 fb.recent.news(limit=100, as_dataframe=True)
@@ -286,6 +294,7 @@ fb = FinBrainClient()  # reads from FINBRAIN_API_KEY env var
 | Senate trades        | `client.senate_trades.ticker()`          | `/congress/senate/{SYMBOL}`                 |
 | Corporate lobbying   | `client.corporate_lobbying.ticker()`     | `/lobbying/{SYMBOL}`                        |
 | Reddit mentions      | `client.reddit_mentions.ticker()`        | `/reddit-mentions/{SYMBOL}`                 |
+| Gov. contracts       | `client.government_contracts.ticker()`   | `/government-contracts/{SYMBOL}`            |
 | Insider transactions | `client.insider_transactions.ticker()`   | `/insider-trading/{SYMBOL}`                 |
 | LinkedIn             | `client.linkedin_data.ticker()`          | `/linkedin/{SYMBOL}`                        |
 | Options – Put/Call   | `client.options.put_call()`              | `/put-call-ratio/{SYMBOL}`                  |
@@ -293,6 +302,7 @@ fb = FinBrainClient()  # reads from FINBRAIN_API_KEY env var
 |                      | `client.screener.predictions_daily()`    | `/screener/predictions/daily`               |
 |                      | `client.screener.insider_trading()`      | `/screener/insider-trading`                 |
 |                      | `client.screener.reddit_mentions()`      | `/screener/reddit-mentions`                 |
+|                      | `client.screener.government_contracts()` | `/screener/government-contracts`            |
 |                      | ... and 8 more screener methods          |                                             |
 | Recent               | `client.recent.news()`                   | `/recent/news`                              |
 |                      | `client.recent.analyst_ratings()`        | `/recent/analyst-ratings`                   |

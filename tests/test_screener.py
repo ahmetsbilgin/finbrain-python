@@ -312,3 +312,39 @@ def test_screener_predictions_monthly_dataframe(client, _activate_responses):
     assert set(df.columns) == {"name", "expectedLongTerm"}
     assert df.loc["AAPL", "expectedLongTerm"] == 1.5
     assert df.loc["TSLA", "expectedLongTerm"] == 2.1
+
+
+# ── government contracts ─────────────────────────────────────────────
+def test_screener_government_contracts(client, _activate_responses):
+    payload = wrap_v2({
+        "data": [
+            {"symbol": "LMT", "name": "Lockheed Martin", "awardAmount": 50000000,
+             "awardingAgency": "Department of Defense", "startDate": "2025-06-01"},
+        ],
+        "summary": {"totalContracts": 1, "totalTickers": 1, "totalValue": 50000000},
+    })
+    stub_json(_activate_responses, "GET", "screener/government-contracts", payload, params={"limit": "5"})
+    data = client.screener.government_contracts(limit=5)
+    assert isinstance(data, list)
+    assert len(data) == 1
+    assert data[0]["symbol"] == "LMT"
+    assert data[0]["awardAmount"] == 50000000
+
+
+def test_screener_government_contracts_dataframe(client, _activate_responses):
+    payload = wrap_v2({
+        "data": [
+            {"symbol": "LMT", "name": "Lockheed Martin", "awardAmount": 50000000,
+             "awardingAgency": "Department of Defense", "startDate": "2025-06-01"},
+            {"symbol": "BA", "name": "Boeing", "awardAmount": 80000000,
+             "awardingAgency": "Department of Defense", "startDate": "2025-05-20"},
+        ],
+        "summary": {"totalContracts": 2, "totalTickers": 2, "totalValue": 130000000},
+    })
+    stub_json(_activate_responses, "GET", "screener/government-contracts", payload, params={"limit": "5"})
+    df = client.screener.government_contracts(limit=5, as_dataframe=True)
+    assert isinstance(df, pd.DataFrame)
+    assert len(df) == 2
+    assert df.index.name == "symbol"
+    assert "awardAmount" in df.columns
+    assert df.loc["LMT", "awardAmount"] == 50000000

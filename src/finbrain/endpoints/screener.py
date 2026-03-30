@@ -227,3 +227,15 @@ class ScreenerAPI:
         """Screen Reddit mention counts across tickers."""
         params = self._build_params(limit=limit, market=market, region=region)
         return self._get("screener/reddit-mentions", params, as_dataframe)
+
+    # ── government contracts ──────────────────────────────────
+
+    def government_contracts(
+        self,
+        *,
+        limit: int | None = None,
+        as_dataframe: bool = False,
+    ) -> List[Dict[str, Any]] | pd.DataFrame:
+        """Screen government contracts across all tickers."""
+        params = self._build_params(limit=limit)
+        return self._get("screener/government-contracts", params, as_dataframe)

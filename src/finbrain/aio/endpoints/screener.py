@@ -222,3 +222,15 @@ class AsyncScreenerAPI:
         """Screen Reddit mention counts across tickers (async)."""
         params = self._build_params(limit=limit, market=market, region=region)
         return await self._get("screener/reddit-mentions", params, as_dataframe)
+
+    # ── government contracts ──────────────────────────────────
+
+    async def government_contracts(
+        self,
+        *,
+        limit: int | None = None,
+        as_dataframe: bool = False,
+    ) -> List[Dict[str, Any]] | pd.DataFrame:
+        """Screen government contracts across all tickers (async)."""
+        params = self._build_params(limit=limit)
+        return await self._get("screener/government-contracts", params, as_dataframe)

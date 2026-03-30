@@ -547,3 +547,48 @@ def test_reddit_mentions_top_latest_snapshot():
 
     # Should use the 08:00 snapshot (120 mentions), not 04:00 (50)
     assert fig.data[0].x == (85,)  # wsb=85 from the latest snapshot
+
+
+# ── government_contracts ──────────────────────────────────────────────
+
+class MockGovernmentContractsClient:
+    class government_contracts:
+        @staticmethod
+        def ticker(*args, **kwargs):
+            df = pd.DataFrame({
+                "awardAmount": [50000000, 12000000],
+                "awardingAgency": ["Department of Defense", "NASA"],
+                "description": ["Aircraft maintenance", "Space systems"],
+                "naicsDescription": ["Aircraft Manufacturing", "Guided Missile Mfg"],
+                "startDate": pd.to_datetime(["2024-01-15", "2024-03-20"]),
+            }).set_index("startDate")
+            return df
+
+
+def test_government_contracts_plot():
+    plot = _PlotNamespace(MockGovernmentContractsClient())
+    fig = plot.government_contracts("LMT", price_data=PRICE_DF, show=False)
+
+    assert isinstance(fig, go.Figure)
+    # price line + contract award bars
+    assert len(fig.data) >= 2
+    assert "Government Contracts" in fig.layout.title.text
+
+
+def test_government_contracts_empty_price_data():
+    plot = _PlotNamespace(MockClient())
+    with pytest.raises(ValueError, match="price_data cannot be empty"):
+        plot.government_contracts("LMT", price_data=pd.DataFrame())
+
+
+def test_government_contracts_missing_price_column():
+    plot = _PlotNamespace(MockClient())
+    bad_df = pd.DataFrame({"volume": [100, 200]})
+    with pytest.raises(ValueError, match="price_data must contain a price column"):
+        plot.government_contracts("LMT", price_data=bad_df)
+
+
+def test_government_contracts_as_json():
+    plot = _PlotNamespace(MockGovernmentContractsClient())
+    result = plot.government_contracts("LMT", price_data=PRICE_DF, show=False, as_json=True)
+    assert isinstance(result, str)

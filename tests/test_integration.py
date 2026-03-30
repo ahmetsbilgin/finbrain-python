@@ -334,6 +334,47 @@ class TestRedditMentions:
 
 
 # =====================================================================
+# Government Contracts
+# =====================================================================
+class TestGovernmentContracts:
+    def test_raw(self, fb):
+        data = fb.government_contracts.ticker("LMT")
+        assert isinstance(data, dict)
+        assert "contracts" in data
+        contracts = data["contracts"]
+        assert isinstance(contracts, list)
+        if len(contracts) > 0:
+            assert "startDate" in contracts[0]
+            assert "awardAmount" in contracts[0]
+            assert "awardingAgency" in contracts[0]
+            assert "recipientName" in contracts[0]
+
+    def test_dataframe(self, fb):
+        df = fb.government_contracts.ticker("LMT", as_dataframe=True)
+        assert isinstance(df, pd.DataFrame)
+        if len(df) > 0:
+            assert df.index.name == "startDate"
+            assert pd.api.types.is_datetime64_any_dtype(df.index)
+            assert "awardAmount" in df.columns
+            assert "awardingAgency" in df.columns
+
+    def test_screener_raw(self, fb):
+        data = fb.screener.government_contracts()
+        assert isinstance(data, list)
+        if len(data) > 0:
+            row = data[0]
+            assert "symbol" in row
+            assert "awardAmount" in row
+            assert "awardingAgency" in row
+
+    def test_screener_dataframe(self, fb):
+        df = fb.screener.government_contracts(as_dataframe=True)
+        assert isinstance(df, pd.DataFrame)
+        if len(df) > 0:
+            assert df.index.name == "symbol"
+
+
+# =====================================================================
 # LinkedIn Data
 # =====================================================================
 class TestLinkedInData:

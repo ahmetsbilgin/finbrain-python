@@ -46,6 +46,7 @@ dev = [
     "twine",
     "ruff",                      # linter/formatter (optional)
     "mypy",                      # static type checker (validates py.typed surface)
+    "types-requests",            # stubs for requests (mypy import-untyped otherwise)
 ]
 
 [tool.pytest.ini_options]

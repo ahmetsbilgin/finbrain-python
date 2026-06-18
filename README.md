@@ -315,6 +315,7 @@ fb = FinBrainClient()  # reads from FINBRAIN_API_KEY env var
 | Corporate lobbying   | `client.corporate_lobbying.ticker()`     | `/lobbying/{SYMBOL}`                        |
 | Reddit mentions      | `client.reddit_mentions.ticker()`        | `/reddit-mentions/{SYMBOL}`                 |
 | Gov. contracts       | `client.government_contracts.ticker()`   | `/government-contracts/{SYMBOL}`            |
+| Patent filings       | `client.patent_filings.ticker()`         | `/patent-filings/{SYMBOL}`                  |
 | Insider transactions | `client.insider_transactions.ticker()`   | `/insider-trading/{SYMBOL}`                 |
 | LinkedIn             | `client.linkedin_data.ticker()`          | `/linkedin/{SYMBOL}`                        |
 | Options – Put/Call   | `client.options.put_call()`              | `/put-call-ratio/{SYMBOL}`                  |
@@ -323,6 +324,7 @@ fb = FinBrainClient()  # reads from FINBRAIN_API_KEY env var
 |                      | `client.screener.insider_trading()`      | `/screener/insider-trading`                 |
 |                      | `client.screener.reddit_mentions()`      | `/screener/reddit-mentions`                 |
 |                      | `client.screener.government_contracts()` | `/screener/government-contracts`            |
+|                      | `client.screener.patent_filings()`       | `/screener/patent-filings`                  |
 |                      | ... and 8 more screener methods          |                                             |
 | Recent               | `client.recent.news()`                   | `/recent/news`                              |
 |                      | `client.recent.analyst_ratings()`        | `/recent/analyst-ratings`                   |
@@ -350,6 +352,9 @@ except BadRequest as exc:
 | 405         | `MethodNotAllowed`       | HTTP method not supported on endpoint |
 | 429         | `RateLimitError`         | Too many requests                     |
 | 500         | `ServerError`            | FinBrain internal error               |
+| 502         | `BadGateway`             | Invalid response from upstream server |
+| 503         | `ServiceUnavailable`     | Service temporarily unavailable       |
+| 504         | `GatewayTimeout`         | Upstream server timed out             |
 
 ---
 

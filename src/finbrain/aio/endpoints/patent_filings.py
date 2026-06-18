@@ -1,0 +1,48 @@
+from __future__ import annotations
+import pandas as pd
+import datetime as _dt
+from typing import TYPE_CHECKING, Dict, Any, List
+
+from ._utils import to_datestr
+
+if TYPE_CHECKING:
+    from ..client import AsyncFinBrainClient
+
+
+class AsyncPatentFilingsAPI:
+    """Async wrapper for /patent-filings and /screener/patent-filings endpoints."""
+
+    def __init__(self, client: "AsyncFinBrainClient") -> None:
+        self._c = client
+
+    async def ticker(
+        self,
+        symbol: str,
+        *,
+        date_from: _dt.date | str | None = None,
+        date_to: _dt.date | str | None = None,
+        limit: int | None = None,
+        as_dataframe: bool = False,
+    ) -> Dict[str, Any] | pd.DataFrame:
+        """Fetch USPTO granted patents for a symbol (async)."""
+        params: Dict[str, str] = {}
+        if date_from:
+            params["startDate"] = to_datestr(date_from)
+        if date_to:
+            params["endDate"] = to_datestr(date_to)
+        if limit is not None:
+            params["limit"] = str(limit)
+
+        path = f"patent-filings/{symbol.upper()}"
+
+        data: Dict[str, Any] = await self._c._request("GET", path, params=params)
+
+        if as_dataframe:
+            rows: List[Dict[str, Any]] = data.get("patents", [])
+            df = pd.DataFrame(rows)
+            if not df.empty and "patentDate" in df.columns:
+                df["patentDate"] = pd.to_datetime(df["patentDate"])
+                df.set_index("patentDate", inplace=True)
+            return df
+
+        return data

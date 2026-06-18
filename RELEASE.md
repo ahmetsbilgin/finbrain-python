@@ -10,7 +10,7 @@ Starting from v0.1.6, we use **`v`-prefixed tags** (e.g., `v0.1.6`, `v0.2.0`, `v
 
 ### 1. Update CHANGELOG.md
 
-Edit `CHANGELOG.md` and move items from `[Unreleased]` to a new version section:
+Edit `CHANGELOG.md` and add a new version section at the top, above the previous release:
 
 ```markdown
 ## [0.1.6] - 2025-01-15

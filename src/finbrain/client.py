@@ -26,10 +26,11 @@ from .endpoints.recent import RecentAPI
 from .endpoints.corporate_lobbying import CorporateLobbyingAPI
 from .endpoints.reddit_mentions import RedditMentionsAPI
 from .endpoints.government_contracts import GovernmentContractsAPI
+from .endpoints.patent_filings import PatentFilingsAPI
 
 
-# Which status codes merit a retry
-_RETRYABLE_STATUS = {500}
+# Which status codes merit a retry (transient server / gateway errors)
+_RETRYABLE_STATUS = {500, 502, 503, 504}
 # How long to wait between retries   (2, 4, 8 … seconds)
 _BACKOFF_BASE = 2
 
@@ -81,6 +82,20 @@ class FinBrainClient:
         self.corporate_lobbying = CorporateLobbyingAPI(self)
         self.reddit_mentions = RedditMentionsAPI(self)
         self.government_contracts = GovernmentContractsAPI(self)
+        self.patent_filings = PatentFilingsAPI(self)
+
+    # ---------- lifecycle ----------
+    def __enter__(self) -> "FinBrainClient":
+        """Context manager entry."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Context manager exit — close the underlying HTTP session."""
+        self.close()
+
+    def close(self) -> None:
+        """Close the underlying ``requests.Session``."""
+        self.session.close()
 
     # ---------- private helpers ----------
     def _request(
@@ -131,7 +146,7 @@ class FinBrainClient:
 
             # ── Error path ───────────────────────────────────
             if resp.status_code in _RETRYABLE_STATUS and attempt < self.retries:
-                # 500 – exponential back-off then retry
+                # Transient server/gateway error – exponential back-off then retry
                 time.sleep(_BACKOFF_BASE**attempt)
                 continue
 

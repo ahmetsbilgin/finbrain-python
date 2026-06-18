@@ -86,6 +86,13 @@ fb.government_contracts.ticker("LMT",
                                limit=50,
                                as_dataframe=True)
 
+# ---------- patent filings ----------
+fb.patent_filings.ticker("AAPL",
+                         date_from="2025-01-01",
+                         date_to="2025-12-31",
+                         limit=50,
+                         as_dataframe=True)
+
 # ---------- insider transactions ----------
 fb.insider_transactions.ticker("AMZN", as_dataframe=True)
 
@@ -119,6 +126,7 @@ fb.screener.predictions_daily(limit=100, as_dataframe=True)
 fb.screener.insider_trading(limit=50)
 fb.screener.reddit_mentions(limit=100, as_dataframe=True)
 fb.screener.government_contracts(limit=100, as_dataframe=True)
+fb.screener.patent_filings(limit=100, as_dataframe=True)
 
 # ---------- recent data ----------
 fb.recent.news(limit=100, as_dataframe=True)
@@ -239,6 +247,18 @@ fb.plot.reddit_mentions("TSLA",
                         price_data=price_df,
                         date_from="2026-03-01",
                         date_to="2026-03-17")
+
+# Plot patent grants (bars sized by claim count) on your price chart
+fb.plot.patent_filings("AAPL",
+                       price_data=price_df,
+                       date_from="2024-01-01",
+                       date_to="2025-06-30")
+
+# Plot analyst ratings & price targets (markers coloured by action) on your price chart
+fb.plot.analyst_ratings("AAPL",
+                        price_data=price_df,
+                        date_from="2024-01-01",
+                        date_to="2025-06-30")
 ```
 
 ```python

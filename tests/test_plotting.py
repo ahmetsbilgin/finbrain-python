@@ -592,3 +592,98 @@ def test_government_contracts_as_json():
     plot = _PlotNamespace(MockGovernmentContractsClient())
     result = plot.government_contracts("LMT", price_data=PRICE_DF, show=False, as_json=True)
     assert isinstance(result, str)
+
+
+# ── patent_filings ────────────────────────────────────────────────────
+
+class MockPatentFilingsClient:
+    class patent_filings:
+        @staticmethod
+        def ticker(*args, **kwargs):
+            df = pd.DataFrame({
+                "numClaims": [20, 15],
+                "title": ["On-device machine learning", "Adaptive display refresh"],
+                "type": ["utility", "utility"],
+                "primaryCpcSection": ["G", "G"],
+                "patentDate": pd.to_datetime(["2024-01-15", "2024-03-20"]),
+            }).set_index("patentDate")
+            return df
+
+
+def test_patent_filings_plot():
+    plot = _PlotNamespace(MockPatentFilingsClient())
+    fig = plot.patent_filings("AAPL", price_data=PRICE_DF, show=False)
+
+    assert isinstance(fig, go.Figure)
+    # price line + patent grant bars
+    assert len(fig.data) >= 2
+    assert "Patent Filings" in fig.layout.title.text
+
+
+def test_patent_filings_empty_price_data():
+    plot = _PlotNamespace(MockClient())
+    with pytest.raises(ValueError, match="price_data cannot be empty"):
+        plot.patent_filings("AAPL", price_data=pd.DataFrame())
+
+
+def test_patent_filings_missing_price_column():
+    plot = _PlotNamespace(MockClient())
+    bad_df = pd.DataFrame({"volume": [100, 200]})
+    with pytest.raises(ValueError, match="price_data must contain a price column"):
+        plot.patent_filings("AAPL", price_data=bad_df)
+
+
+def test_patent_filings_as_json():
+    plot = _PlotNamespace(MockPatentFilingsClient())
+    result = plot.patent_filings("AAPL", price_data=PRICE_DF, show=False, as_json=True)
+    assert isinstance(result, str)
+
+
+# ── analyst_ratings ───────────────────────────────────────────────────
+
+class MockAnalystRatingsClient:
+    class analyst_ratings:
+        @staticmethod
+        def ticker(*args, **kwargs):
+            df = pd.DataFrame({
+                "institution": ["Morgan Stanley", "Goldman Sachs", "Barclays"],
+                "action": ["Upgrade", "Downgrade", "Initiates Coverage"],
+                "rating": ["Overweight", "Sell", "Equal-Weight"],
+                # one row intentionally has no target price
+                "targetPrice": ["250", None, "180"],
+                "date": pd.to_datetime(["2024-01-01", "2024-01-02", "2024-01-03"]),
+            }).set_index("date")
+            return df
+
+
+def test_analyst_ratings_plot():
+    plot = _PlotNamespace(MockAnalystRatingsClient())
+    fig = plot.analyst_ratings("AAPL", price_data=PRICE_DF, show=False)
+
+    assert isinstance(fig, go.Figure)
+    # price line + at least one action-category marker trace
+    assert len(fig.data) >= 2
+    assert "Analyst Ratings" in fig.layout.title.text
+    trace_names = {t.name for t in fig.data}
+    assert "Upgrade" in trace_names
+    assert "Downgrade" in trace_names
+    assert "Initiate" in trace_names
+
+
+def test_analyst_ratings_empty_price_data():
+    plot = _PlotNamespace(MockClient())
+    with pytest.raises(ValueError, match="price_data cannot be empty"):
+        plot.analyst_ratings("AAPL", price_data=pd.DataFrame())
+
+
+def test_analyst_ratings_missing_price_column():
+    plot = _PlotNamespace(MockClient())
+    bad_df = pd.DataFrame({"volume": [100, 200]})
+    with pytest.raises(ValueError, match="price_data must contain a price column"):
+        plot.analyst_ratings("AAPL", price_data=bad_df)
+
+
+def test_analyst_ratings_as_json():
+    plot = _PlotNamespace(MockAnalystRatingsClient())
+    result = plot.analyst_ratings("AAPL", price_data=PRICE_DF, show=False, as_json=True)
+    assert isinstance(result, str)

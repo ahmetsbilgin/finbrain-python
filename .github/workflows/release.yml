@@ -24,14 +24,14 @@ jobs:
 
       # ─────────── push to TestPyPI first ───────────
       - name: Upload to TestPyPI
-        run: twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+        run: twine upload --skip-existing --repository-url https://test.pypi.org/legacy/ dist/*
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
 
       # ─────────── then to production PyPI ───────────
       - name: Upload to PyPI
-        run: twine upload dist/*
+        run: twine upload --skip-existing dist/*
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}

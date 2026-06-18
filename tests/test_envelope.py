@@ -3,7 +3,8 @@ import responses
 from urllib.parse import urljoin
 from finbrain import FinBrainClient
 from finbrain.exceptions import (
-    BadRequest, AuthenticationError, NotFound, RateLimitError
+    BadRequest, AuthenticationError, NotFound, RateLimitError,
+    ServerError, BadGateway, ServiceUnavailable, GatewayTimeout,
 )
 
 BASE = "https://api.finbrain.tech/v2/"
@@ -107,3 +108,44 @@ def test_no_token_in_query_params(client, _activate_responses):
 def test_last_meta_initially_none(client):
     """last_meta starts as None."""
     assert client.last_meta is None
+
+
+@pytest.mark.parametrize(
+    "status, exc",
+    [
+        (500, ServerError),
+        (502, BadGateway),
+        (503, ServiceUnavailable),
+        (504, GatewayTimeout),
+    ],
+)
+def test_transient_status_maps_to_dedicated_exception(client, _activate_responses, status, exc):
+    """Exhausted retries raise the status-specific exception type."""
+    url = urljoin(BASE, "markets")
+    _activate_responses.add("GET", url, json={"error": {"message": "boom"}}, status=status)
+    with pytest.raises(exc) as exc_info:
+        client._request("GET", "markets")
+    assert exc_info.value.status_code == status
+
+
+@pytest.mark.parametrize("status", [500, 502, 503, 504])
+def test_retries_on_transient_status(monkeypatch, _activate_responses, status):
+    """Transient server/gateway errors are retried, then succeed."""
+    monkeypatch.setattr("finbrain.client.time.sleep", lambda *_: None)
+    client = FinBrainClient(api_key="dummy", retries=2)
+    url = urljoin(BASE, "markets")
+    # first attempt errors, retry succeeds
+    _activate_responses.add("GET", url, json={"error": {"message": "boom"}}, status=status)
+    _activate_responses.add("GET", url, json={"success": True, "data": [], "meta": {}})
+
+    assert client._request("GET", "markets") == []
+    assert len(_activate_responses.calls) == 2
+
+
+def test_context_manager_closes_session():
+    """Sync client supports `with` and closes the underlying session."""
+    with FinBrainClient(api_key="dummy") as client:
+        session = client.session
+        assert session is not None
+    # requests.Session.close() is idempotent; calling again must not raise
+    client.close()

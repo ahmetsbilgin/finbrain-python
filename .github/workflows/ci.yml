@@ -17,4 +17,5 @@ jobs:
             python-version: ${{ matrix.python }}
       - run: pip install -e .[dev]
       - run: ruff check .
+      - run: mypy
       - run: pytest -q

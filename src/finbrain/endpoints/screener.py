@@ -239,3 +239,15 @@ class ScreenerAPI:
         """Screen government contracts across all tickers."""
         params = self._build_params(limit=limit)
         return self._get("screener/government-contracts", params, as_dataframe)
+
+    # ── patent filings ────────────────────────────────────────
+
+    def patent_filings(
+        self,
+        *,
+        limit: int | None = None,
+        as_dataframe: bool = False,
+    ) -> List[Dict[str, Any]] | pd.DataFrame:
+        """Screen USPTO patent filings across all tickers."""
+        params = self._build_params(limit=limit)
+        return self._get("screener/patent-filings", params, as_dataframe)

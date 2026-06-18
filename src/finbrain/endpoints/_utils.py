@@ -28,10 +28,16 @@ def to_datestr(value: _dt.date | str) -> str:
 
     Examples
     --------
-    >>> from datetime import date
+    >>> from datetime import date, datetime
     >>> to_datestr(date(2025, 1, 15))
+    '2025-01-15'
+    >>> to_datestr(datetime(2025, 1, 15, 9, 30))
     '2025-01-15'
     >>> to_datestr("2025-01-15")
     '2025-01-15'
     """
+    # ``datetime`` subclasses ``date``; take the date part so the time
+    # component never leaks into the ``YYYY-MM-DD`` API parameter.
+    if isinstance(value, _dt.datetime):
+        return value.date().isoformat()
     return value.isoformat() if isinstance(value, _dt.date) else value

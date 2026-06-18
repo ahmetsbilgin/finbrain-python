@@ -14,6 +14,9 @@ Docs-based mapping
 405  Method Not Allowed     → MethodNotAllowed
 429  Rate Limit Exceeded    → RateLimitError
 500  Internal Server Error  → ServerError
+502  Bad Gateway            → BadGateway
+503  Service Unavailable    → ServiceUnavailable
+504  Gateway Timeout        → GatewayTimeout
 """
 
 from __future__ import annotations
@@ -29,6 +32,9 @@ __all__ = [
     "MethodNotAllowed",
     "RateLimitError",
     "ServerError",
+    "BadGateway",
+    "ServiceUnavailable",
+    "GatewayTimeout",
     #
     "InvalidResponse",
     "http_error_to_exception",
@@ -94,6 +100,18 @@ class RateLimitError(FinBrainError):
 
 class ServerError(FinBrainError):
     """500 - Internal error on FinBrain's side. Retrying later may help."""
+
+
+class BadGateway(FinBrainError):
+    """502 - Invalid response from an upstream server. Usually transient."""
+
+
+class ServiceUnavailable(FinBrainError):
+    """503 - Service temporarily unavailable (overloaded or in maintenance)."""
+
+
+class GatewayTimeout(FinBrainError):
+    """504 - Upstream server did not respond in time. Usually transient."""
 
 
 # ─────────────────────────────────────────────────────────────
@@ -167,6 +185,12 @@ def http_error_to_exception(resp) -> FinBrainError:  # expects requests.Response
         return RateLimitError(message, **kwargs)
     if status == 500:
         return ServerError(message, **kwargs)
+    if status == 502:
+        return BadGateway(message, **kwargs)
+    if status == 503:
+        return ServiceUnavailable(message, **kwargs)
+    if status == 504:
+        return GatewayTimeout(message, **kwargs)
 
     # Fallback for undocumented codes (future-proofing)
     return FinBrainError(message, **kwargs)

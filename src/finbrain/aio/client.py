@@ -25,10 +25,11 @@ from .endpoints.recent import AsyncRecentAPI
 from .endpoints.corporate_lobbying import AsyncCorporateLobbyingAPI
 from .endpoints.reddit_mentions import AsyncRedditMentionsAPI
 from .endpoints.government_contracts import AsyncGovernmentContractsAPI
+from .endpoints.patent_filings import AsyncPatentFilingsAPI
 
 
-# Which status codes merit a retry
-_RETRYABLE_STATUS = {500}
+# Which status codes merit a retry (transient server / gateway errors)
+_RETRYABLE_STATUS = {500, 502, 503, 504}
 # How long to wait between retries   (2, 4, 8 … seconds)
 _BACKOFF_BASE = 2
 
@@ -86,6 +87,7 @@ class AsyncFinBrainClient:
         self.corporate_lobbying = AsyncCorporateLobbyingAPI(self)
         self.reddit_mentions = AsyncRedditMentionsAPI(self)
         self.government_contracts = AsyncGovernmentContractsAPI(self)
+        self.patent_filings = AsyncPatentFilingsAPI(self)
 
     async def __aenter__(self) -> "AsyncFinBrainClient":
         """Context manager entry."""
@@ -164,7 +166,7 @@ class AsyncFinBrainClient:
 
             # ── Error path ───────────────────────────────────
             if resp.status_code in _RETRYABLE_STATUS and attempt < self.retries:
-                # 500 – exponential back-off then retry
+                # Transient server/gateway error – exponential back-off then retry
                 await asyncio.sleep(_BACKOFF_BASE**attempt)
                 continue
 

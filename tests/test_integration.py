@@ -375,6 +375,47 @@ class TestGovernmentContracts:
 
 
 # =====================================================================
+# Patent Filings
+# =====================================================================
+class TestPatentFilings:
+    def test_raw(self, fb):
+        data = fb.patent_filings.ticker("AAPL")
+        assert isinstance(data, dict)
+        assert "patents" in data
+        patents = data["patents"]
+        assert isinstance(patents, list)
+        if len(patents) > 0:
+            assert "patentId" in patents[0]
+            assert "patentDate" in patents[0]
+            assert "title" in patents[0]
+            assert "numClaims" in patents[0]
+
+    def test_dataframe(self, fb):
+        df = fb.patent_filings.ticker("AAPL", as_dataframe=True)
+        assert isinstance(df, pd.DataFrame)
+        if len(df) > 0:
+            assert df.index.name == "patentDate"
+            assert pd.api.types.is_datetime64_any_dtype(df.index)
+            assert "numClaims" in df.columns
+            assert "title" in df.columns
+
+    def test_screener_raw(self, fb):
+        data = fb.screener.patent_filings()
+        assert isinstance(data, list)
+        if len(data) > 0:
+            row = data[0]
+            assert "symbol" in row
+            assert "patentId" in row
+            assert "numClaims" in row
+
+    def test_screener_dataframe(self, fb):
+        df = fb.screener.patent_filings(as_dataframe=True)
+        assert isinstance(df, pd.DataFrame)
+        if len(df) > 0:
+            assert df.index.name == "symbol"
+
+
+# =====================================================================
 # LinkedIn Data
 # =====================================================================
 class TestLinkedInData:

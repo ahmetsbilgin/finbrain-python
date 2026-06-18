@@ -348,3 +348,39 @@ def test_screener_government_contracts_dataframe(client, _activate_responses):
     assert df.index.name == "symbol"
     assert "awardAmount" in df.columns
     assert df.loc["LMT", "awardAmount"] == 50000000
+
+
+# ── patent filings ───────────────────────────────────────────────────
+def test_screener_patent_filings(client, _activate_responses):
+    payload = wrap_v2({
+        "data": [
+            {"symbol": "AAPL", "name": "Apple Inc.", "patentId": "12345678",
+             "patentDate": "2025-06-01", "primaryCpcSection": "G", "numClaims": 20},
+        ],
+        "summary": {"totalPatents": 1, "totalTickers": 1, "topCpcSections": ["G"]},
+    })
+    stub_json(_activate_responses, "GET", "screener/patent-filings", payload, params={"limit": "5"})
+    data = client.screener.patent_filings(limit=5)
+    assert isinstance(data, list)
+    assert len(data) == 1
+    assert data[0]["symbol"] == "AAPL"
+    assert data[0]["numClaims"] == 20
+
+
+def test_screener_patent_filings_dataframe(client, _activate_responses):
+    payload = wrap_v2({
+        "data": [
+            {"symbol": "AAPL", "name": "Apple Inc.", "patentId": "12345678",
+             "patentDate": "2025-06-01", "primaryCpcSection": "G", "numClaims": 20},
+            {"symbol": "MSFT", "name": "Microsoft", "patentId": "12345699",
+             "patentDate": "2025-05-20", "primaryCpcSection": "G", "numClaims": 18},
+        ],
+        "summary": {"totalPatents": 2, "totalTickers": 2, "topCpcSections": ["G"]},
+    })
+    stub_json(_activate_responses, "GET", "screener/patent-filings", payload, params={"limit": "5"})
+    df = client.screener.patent_filings(limit=5, as_dataframe=True)
+    assert isinstance(df, pd.DataFrame)
+    assert len(df) == 2
+    assert df.index.name == "symbol"
+    assert "numClaims" in df.columns
+    assert df.loc["AAPL", "numClaims"] == 20

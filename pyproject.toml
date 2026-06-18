@@ -45,9 +45,17 @@ dev = [
     "build",
     "twine",
     "ruff",                      # linter/formatter (optional)
+    "mypy",                      # static type checker (validates py.typed surface)
 ]
 
 [tool.pytest.ini_options]
 markers = [
     "integration: hits the real FinBrain v2 API (requires FINBRAIN_API_KEY)",
 ]
+
+[tool.mypy]
+# Code targets >=3.9 but uses `from __future__ import annotations` throughout,
+# so checking against 3.10 (mypy's minimum target) is equivalent here.
+python_version = "3.10"
+files = ["src/finbrain"]
+ignore_missing_imports = true   # third-party libs (pandas, plotly, …) ship no stubs here

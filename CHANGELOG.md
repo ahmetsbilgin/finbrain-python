@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5] - 2026-06-18
+
+### Added
+
+- **Patent Filings Endpoint**: `fb.patent_filings.ticker("AAPL")` — fetch USPTO granted patents mapped to a ticker, with grant date, title, type, claim counts, citations, assignee, inventors, and CPC classifications (`/patent-filings/{SYMBOL}`)
+- **Patent Filings Screener**: `fb.screener.patent_filings()` — cross-ticker patent filings with summary stats (total patents, tickers, top CPC sections) (`/screener/patent-filings`)
+- **Patent Filings Plotting**: `fb.plot.patent_filings()` — visualize patent grants as bars sized by claim count on a secondary y-axis overlaid on a price chart, with hover details showing title, type, and CPC section
+- **Async Patent Filings**: Full async support via `AsyncPatentFilingsAPI`
+- **Patent Filings Tests**: Unit tests (`tests/test_patent_filings.py`), screener tests, integration tests, and plotting tests
+- **Sync Context Manager**: `FinBrainClient` now supports `with FinBrainClient(...) as fb:` and exposes `close()` to release the underlying HTTP session (parity with `AsyncFinBrainClient`)
+- **Exception Types**: Dedicated `BadGateway` (502), `ServiceUnavailable` (503), and `GatewayTimeout` (504) exceptions for transient gateway errors
+- **Analyst Ratings Plotting**: `fb.plot.analyst_ratings()` — overlay analyst rating actions and price targets on a price chart, with markers grouped and coloured by action category (upgrade/downgrade/initiate/maintain); fills the last remaining ticker-level dataset without a plot method
+
+### Fixed
+
+- **Date parameter handling**: `datetime.datetime` values passed to `date_from`/`date_to` are now truncated to `YYYY-MM-DD` instead of leaking a full ISO timestamp into the API query
+
+### Changed
+
+- **Retry coverage**: Transient gateway errors (502/503/504) are now retried alongside 500, with exponential back-off
+- **Internal**: Async endpoint date helper re-exports the synchronous `to_datestr` to keep a single source of truth
+- **Internal**: Plotting price-overlay methods now share `_resolve_price_column` and `_to_naive_index` helpers, removing ~250 lines of duplicated validation/timezone boilerplate across the chart methods
+- **Tooling**: Added `mypy` static type checking (validating the published `py.typed` surface) to the dev extra and CI; added a sync-client endpoint-parity test; release uploads now use `--skip-existing` for idempotent re-runs
+
 ## [0.2.4] - 2026-03-30
 
 ### Added

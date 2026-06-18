@@ -1,6 +1,6 @@
 # src/finbrain/plotting.py
 from __future__ import annotations
-from typing import Union, TYPE_CHECKING
+from typing import Literal, Union, TYPE_CHECKING
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -46,7 +46,7 @@ class _PlotNamespace:
         Other args/kwargs identical to the other plotting wrappers.
         """
         # 1) pull data
-        df = self._fb.app_ratings.ticker(
+        df: pd.DataFrame = self._fb.app_ratings.ticker(
             ticker,
             date_from=date_from,
             date_to=date_to,
@@ -150,7 +150,7 @@ class _PlotNamespace:
         * **Bars**   → ``employeeCount`` (primary y-axis)
         * **Line**   → ``followerCount`` (secondary y-axis)
         """
-        df = self._fb.linkedin_data.ticker(
+        df: pd.DataFrame = self._fb.linkedin_data.ticker(
             ticker,
             date_from=date_from,
             date_to=date_to,
@@ -344,7 +344,7 @@ class _PlotNamespace:
         ...                 date_to="2025-05-31")
         """
         if kind == "put_call":
-            df = self._fb.options.put_call(
+            df: pd.DataFrame = self._fb.options.put_call(
                 ticker,
                 date_from=date_from,
                 date_to=date_to,
@@ -368,7 +368,7 @@ class _PlotNamespace:
         self,
         ticker: str,
         *,
-        prediction_type: str = "daily",
+        prediction_type: Literal["daily", "monthly"] = "daily",
         as_json=False,
         show=True,
         template="plotly_dark",
@@ -398,7 +398,7 @@ class _PlotNamespace:
         --------
         >>> fb.plot.predictions("AMZN", prediction_type="monthly")
         """
-        df = self._fb.predictions.ticker(
+        df: pd.DataFrame = self._fb.predictions.ticker(
             ticker, prediction_type=prediction_type, as_dataframe=True, **kw
         )
 
@@ -496,30 +496,10 @@ class _PlotNamespace:
         ... }).set_index("date")
         >>> fb.plot.insider_transactions("AAPL", price_df)
         """
-        # Validate price_data
-        if price_data.empty:
-            raise ValueError("price_data cannot be empty")
-
-        # Flatten MultiIndex columns if present (e.g., from yf.download())
-        if isinstance(price_data.columns, pd.MultiIndex):
-            # Get the first level (price types like 'Close', 'Open', etc.)
-            price_data = price_data.copy()
-            price_data.columns = price_data.columns.get_level_values(0)
-
-        # Find price column (case-insensitive search)
-        price_col = None
-        for col in ["close", "Close", "price", "Price", "adj_close", "Adj Close"]:
-            if col in price_data.columns:
-                price_col = col
-                break
-        if price_col is None:
-            raise ValueError(
-                f"price_data must contain a price column (e.g. 'close', 'Close', 'price'). "
-                f"Found columns: {price_data.columns.tolist()}"
-            )
+        price_data, price_col = self._resolve_price_column(price_data)
 
         # Fetch insider transactions
-        transactions_df = self._fb.insider_transactions.ticker(
+        transactions_df: pd.DataFrame = self._fb.insider_transactions.ticker(
             ticker, as_dataframe=True, **kwargs
         )
 
@@ -599,30 +579,10 @@ class _PlotNamespace:
         >>> fb.plot.house_trades("AAPL", price_df,
         ...                      date_from="2024-01-01", date_to="2024-12-31")
         """
-        # Validate price_data
-        if price_data.empty:
-            raise ValueError("price_data cannot be empty")
-
-        # Flatten MultiIndex columns if present (e.g., from yf.download())
-        if isinstance(price_data.columns, pd.MultiIndex):
-            # Get the first level (price types like 'Close', 'Open', etc.)
-            price_data = price_data.copy()
-            price_data.columns = price_data.columns.get_level_values(0)
-
-        # Find price column (case-insensitive search)
-        price_col = None
-        for col in ["close", "Close", "price", "Price", "adj_close", "Adj Close"]:
-            if col in price_data.columns:
-                price_col = col
-                break
-        if price_col is None:
-            raise ValueError(
-                f"price_data must contain a price column (e.g. 'close', 'Close', 'price'). "
-                f"Found columns: {price_data.columns.tolist()}"
-            )
+        price_data, price_col = self._resolve_price_column(price_data)
 
         # Fetch house trades
-        transactions_df = self._fb.house_trades.ticker(
+        transactions_df: pd.DataFrame = self._fb.house_trades.ticker(
             ticker,
             date_from=date_from,
             date_to=date_to,
@@ -706,30 +666,10 @@ class _PlotNamespace:
         >>> fb.plot.senate_trades("META", price_df,
         ...                       date_from="2024-01-01", date_to="2024-12-31")
         """
-        # Validate price_data
-        if price_data.empty:
-            raise ValueError("price_data cannot be empty")
-
-        # Flatten MultiIndex columns if present (e.g., from yf.download())
-        if isinstance(price_data.columns, pd.MultiIndex):
-            # Get the first level (price types like 'Close', 'Open', etc.)
-            price_data = price_data.copy()
-            price_data.columns = price_data.columns.get_level_values(0)
-
-        # Find price column (case-insensitive search)
-        price_col = None
-        for col in ["close", "Close", "price", "Price", "adj_close", "Adj Close"]:
-            if col in price_data.columns:
-                price_col = col
-                break
-        if price_col is None:
-            raise ValueError(
-                f"price_data must contain a price column (e.g. 'close', 'Close', 'price'). "
-                f"Found columns: {price_data.columns.tolist()}"
-            )
+        price_data, price_col = self._resolve_price_column(price_data)
 
         # Fetch senate trades
-        transactions_df = self._fb.senate_trades.ticker(
+        transactions_df: pd.DataFrame = self._fb.senate_trades.ticker(
             ticker,
             date_from=date_from,
             date_to=date_to,
@@ -802,29 +742,10 @@ class _PlotNamespace:
         ValueError
             If ``price_data`` is empty or missing required price column.
         """
-        # Validate price_data
-        if price_data.empty:
-            raise ValueError("price_data cannot be empty")
-
-        # Flatten MultiIndex columns if present (e.g., from yf.download())
-        if isinstance(price_data.columns, pd.MultiIndex):
-            price_data = price_data.copy()
-            price_data.columns = price_data.columns.get_level_values(0)
-
-        # Find price column (case-insensitive search)
-        price_col = None
-        for col in ["close", "Close", "price", "Price", "adj_close", "Adj Close"]:
-            if col in price_data.columns:
-                price_col = col
-                break
-        if price_col is None:
-            raise ValueError(
-                f"price_data must contain a price column (e.g. 'close', 'Close', 'price'). "
-                f"Found columns: {price_data.columns.tolist()}"
-            )
+        price_data, price_col = self._resolve_price_column(price_data)
 
         # Fetch lobbying filings
-        filings_df = self._fb.corporate_lobbying.ticker(
+        filings_df: pd.DataFrame = self._fb.corporate_lobbying.ticker(
             ticker,
             date_from=date_from,
             date_to=date_to,
@@ -833,9 +754,7 @@ class _PlotNamespace:
         )
 
         # Normalize timezones
-        price_data_normalized = price_data.copy()
-        if price_data_normalized.index.tz is not None:
-            price_data_normalized.index = price_data_normalized.index.tz_localize(None)
+        price_data_normalized = self._to_naive_index(price_data)
 
         fig = go.Figure(
             layout=dict(
@@ -857,9 +776,7 @@ class _PlotNamespace:
         )
 
         if not filings_df.empty:
-            filings_normalized = filings_df.copy()
-            if filings_normalized.index.tz is not None:
-                filings_normalized.index = filings_normalized.index.tz_localize(None)
+            filings_normalized = self._to_naive_index(filings_df)
 
             # Compute total spend per filing (income + expenses)
             spend = filings_normalized.get("income", 0) + filings_normalized.get(
@@ -958,29 +875,10 @@ class _PlotNamespace:
         ValueError
             If ``price_data`` is empty or missing required price column.
         """
-        # Validate price_data
-        if price_data.empty:
-            raise ValueError("price_data cannot be empty")
-
-        # Flatten MultiIndex columns if present (e.g., from yf.download())
-        if isinstance(price_data.columns, pd.MultiIndex):
-            price_data = price_data.copy()
-            price_data.columns = price_data.columns.get_level_values(0)
-
-        # Find price column (case-insensitive search)
-        price_col = None
-        for col in ["close", "Close", "price", "Price", "adj_close", "Adj Close"]:
-            if col in price_data.columns:
-                price_col = col
-                break
-        if price_col is None:
-            raise ValueError(
-                f"price_data must contain a price column (e.g. 'close', 'Close', 'price'). "
-                f"Found columns: {price_data.columns.tolist()}"
-            )
+        price_data, price_col = self._resolve_price_column(price_data)
 
         # Fetch Reddit mentions
-        mentions_df = self._fb.reddit_mentions.ticker(
+        mentions_df: pd.DataFrame = self._fb.reddit_mentions.ticker(
             ticker,
             date_from=date_from,
             date_to=date_to,
@@ -989,9 +887,7 @@ class _PlotNamespace:
         )
 
         # Normalize timezones
-        price_data_normalized = price_data.copy()
-        if price_data_normalized.index.tz is not None:
-            price_data_normalized.index = price_data_normalized.index.tz_localize(None)
+        price_data_normalized = self._to_naive_index(price_data)
 
         fig = go.Figure(
             layout=dict(
@@ -1013,9 +909,7 @@ class _PlotNamespace:
         )
 
         if not mentions_df.empty:
-            mentions_normalized = mentions_df.copy()
-            if mentions_normalized.index.tz is not None:
-                mentions_normalized.index = mentions_normalized.index.tz_localize(None)
+            mentions_normalized = self._to_naive_index(mentions_df)
 
             # Exclude _all (aggregate) — use individual subreddits for stacked bars
             per_sub = mentions_normalized[
@@ -1205,29 +1099,10 @@ class _PlotNamespace:
         ValueError
             If ``price_data`` is empty or missing required price column.
         """
-        # Validate price_data
-        if price_data.empty:
-            raise ValueError("price_data cannot be empty")
-
-        # Flatten MultiIndex columns if present (e.g., from yf.download())
-        if isinstance(price_data.columns, pd.MultiIndex):
-            price_data = price_data.copy()
-            price_data.columns = price_data.columns.get_level_values(0)
-
-        # Find price column (case-insensitive search)
-        price_col = None
-        for col in ["close", "Close", "price", "Price", "adj_close", "Adj Close"]:
-            if col in price_data.columns:
-                price_col = col
-                break
-        if price_col is None:
-            raise ValueError(
-                f"price_data must contain a price column (e.g. 'close', 'Close', 'price'). "
-                f"Found columns: {price_data.columns.tolist()}"
-            )
+        price_data, price_col = self._resolve_price_column(price_data)
 
         # Fetch government contracts
-        contracts_df = self._fb.government_contracts.ticker(
+        contracts_df: pd.DataFrame = self._fb.government_contracts.ticker(
             ticker,
             date_from=date_from,
             date_to=date_to,
@@ -1236,9 +1111,7 @@ class _PlotNamespace:
         )
 
         # Normalize timezones
-        price_data_normalized = price_data.copy()
-        if price_data_normalized.index.tz is not None:
-            price_data_normalized.index = price_data_normalized.index.tz_localize(None)
+        price_data_normalized = self._to_naive_index(price_data)
 
         fig = go.Figure(
             layout=dict(
@@ -1260,9 +1133,7 @@ class _PlotNamespace:
         )
 
         if not contracts_df.empty:
-            contracts_normalized = contracts_df.copy()
-            if contracts_normalized.index.tz is not None:
-                contracts_normalized.index = contracts_normalized.index.tz_localize(None)
+            contracts_normalized = self._to_naive_index(contracts_df)
 
             amounts = contracts_normalized.get("awardAmount", pd.Series(dtype=float))
 
@@ -1308,12 +1179,365 @@ class _PlotNamespace:
             return None
         return fig.to_json() if as_json else fig
 
+    def patent_filings(
+        self,
+        ticker: str,
+        price_data: pd.DataFrame,
+        *,
+        date_from: str | None = None,
+        date_to: str | None = None,
+        as_json: bool = False,
+        show: bool = True,
+        template: str = "plotly_dark",
+        **kwargs,
+    ):
+        """
+        Plot USPTO granted patents overlaid on a price chart.
+
+        Each granted patent is drawn as a bar (sized by its claim count) on a
+        secondary y-axis, positioned at the patent's grant date. This method
+        requires user-provided historical price data, as FinBrain does not
+        currently offer a price history endpoint.
+
+        Parameters
+        ----------
+        ticker : str
+            Ticker symbol (e.g. ``"AAPL"``).
+        price_data : pandas.DataFrame
+            **User-provided** price history with a DatetimeIndex and a column
+            containing prices (e.g. ``"close"``, ``"Close"``, or ``"price"``).
+            The index must be timezone-naive or UTC.
+        date_from, date_to : str or None, optional
+            Date range for patents in ``YYYY-MM-DD`` format (filters grant date).
+        as_json : bool, default False
+            If ``True``, return JSON string instead of Figure object.
+        show : bool, default True
+            If ``True`` and ``as_json=False``, display the figure immediately.
+        template : str, default "plotly_dark"
+            Plotly template name.
+        **kwargs
+            Additional arguments passed to
+            :meth:`FinBrainClient.patent_filings.ticker`.
+
+        Returns
+        -------
+        plotly.graph_objects.Figure or str or None
+            Figure object, JSON string, or None (when shown).
+
+        Raises
+        ------
+        ValueError
+            If ``price_data`` is empty or missing required price column.
+        """
+        price_data, price_col = self._resolve_price_column(price_data)
+
+        # Fetch patent filings
+        patents_df: pd.DataFrame = self._fb.patent_filings.ticker(
+            ticker,
+            date_from=date_from,
+            date_to=date_to,
+            as_dataframe=True,
+            **kwargs,
+        )
+
+        # Normalize timezones
+        price_data_normalized = self._to_naive_index(price_data)
+
+        fig = go.Figure(
+            layout=dict(
+                template=template,
+                title=f"Patent Filings · {ticker}",
+                xaxis_title="Date",
+                hovermode="x unified",
+            )
+        )
+
+        # Plot price line on primary y-axis
+        fig.add_scatter(
+            name="Price",
+            x=price_data_normalized.index,
+            y=price_data_normalized[price_col],
+            mode="lines",
+            line=dict(width=2, color="#02d2ff"),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>Price: $%{y:.2f}<extra></extra>",
+        )
+
+        if not patents_df.empty:
+            patents_normalized = self._to_naive_index(patents_df)
+
+            claims = patents_normalized.get("numClaims", pd.Series(dtype=float))
+
+            hover_text = []
+            for _, row in patents_normalized.iterrows():
+                title = row.get("title", "")
+                if len(str(title)) > 80:
+                    title = str(title)[:80] + "…"
+                ptype = row.get("type", "N/A")
+                section = row.get("primaryCpcSection", "")
+                n_claims = row.get("numClaims", 0)
+                hover_text.append(
+                    f"Title: {title}<br>"
+                    f"Type: {ptype}<br>"
+                    f"CPC Section: {section}<br>"
+                    f"Claims: {n_claims}"
+                )
+
+            fig.add_bar(
+                name="Patent Grant",
+                x=patents_normalized.index,
+                y=claims,
+                marker_color="rgba(249,200,14,0.6)",
+                yaxis="y2",
+                hovertext=hover_text,
+                hovertemplate="<b>%{x|%Y-%m-%d}</b><br>%{hovertext}<extra></extra>",
+            )
+
+        fig.update_layout(
+            yaxis=dict(title="Price", showgrid=True),
+            yaxis2=dict(
+                title="Claims",
+                overlaying="y",
+                side="right",
+                showgrid=False,
+                zeroline=False,
+                rangemode="tozero",
+            ),
+        )
+
+        if show and not as_json:
+            fig.show()
+            return None
+        return fig.to_json() if as_json else fig
+
+    def analyst_ratings(
+        self,
+        ticker: str,
+        price_data: pd.DataFrame,
+        *,
+        date_from: str | None = None,
+        date_to: str | None = None,
+        as_json: bool = False,
+        show: bool = True,
+        template: str = "plotly_dark",
+        **kwargs,
+    ):
+        """
+        Plot analyst rating actions and price targets overlaid on a price chart.
+
+        Each rating is drawn as a marker at its **target price** (where one is
+        provided) or, when no target is given, at the prevailing price on that
+        date, so every action remains visible. Markers are grouped and coloured
+        by action category (upgrade, downgrade, initiate, maintain, other). This
+        method requires user-provided historical price data, as FinBrain does
+        not currently offer a price history endpoint.
+
+        Parameters
+        ----------
+        ticker : str
+            Ticker symbol (e.g. ``"AAPL"``).
+        price_data : pandas.DataFrame
+            **User-provided** price history with a DatetimeIndex and a column
+            containing prices (e.g. ``"close"``, ``"Close"``, or ``"price"``).
+            The index must be timezone-naive or UTC.
+        date_from, date_to : str or None, optional
+            Date range for ratings in ``YYYY-MM-DD`` format.
+        as_json : bool, default False
+            If ``True``, return JSON string instead of Figure object.
+        show : bool, default True
+            If ``True`` and ``as_json=False``, display the figure immediately.
+        template : str, default "plotly_dark"
+            Plotly template name.
+        **kwargs
+            Additional arguments passed to
+            :meth:`FinBrainClient.analyst_ratings.ticker`.
+
+        Returns
+        -------
+        plotly.graph_objects.Figure or str or None
+            Figure object, JSON string, or None (when shown).
+
+        Raises
+        ------
+        ValueError
+            If ``price_data`` is empty or missing required price column.
+        """
+        price_data, price_col = self._resolve_price_column(price_data)
+
+        # Fetch analyst ratings
+        ratings_df: pd.DataFrame = self._fb.analyst_ratings.ticker(
+            ticker,
+            date_from=date_from,
+            date_to=date_to,
+            as_dataframe=True,
+            **kwargs,
+        )
+
+        # Normalize timezones
+        price_data_normalized = self._to_naive_index(price_data)
+
+        fig = go.Figure(
+            layout=dict(
+                template=template,
+                title=f"Analyst Ratings · {ticker}",
+                xaxis_title="Date",
+                yaxis_title="Price / Target ($)",
+                hovermode="x unified",
+            )
+        )
+
+        # Plot price line on primary y-axis
+        fig.add_scatter(
+            name="Price",
+            x=price_data_normalized.index,
+            y=price_data_normalized[price_col],
+            mode="lines",
+            line=dict(width=2, color="#02d2ff"),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>Price: $%{y:.2f}<extra></extra>",
+        )
+
+        if not ratings_df.empty:
+            ratings_normalized = self._to_naive_index(ratings_df)
+
+            targets = pd.to_numeric(
+                ratings_normalized.get("targetPrice"), errors="coerce"
+            )
+
+            def _price_at(when):
+                """Nearest available price for a rating date."""
+                if when in price_data_normalized.index:
+                    return price_data_normalized.loc[when, price_col]
+                idx = price_data_normalized.index.get_indexer([when], method="nearest")[0]
+                if 0 <= idx < len(price_data_normalized):
+                    return price_data_normalized.iloc[idx][price_col]
+                return None
+
+            # action category → (legend label, colour)
+            categories = {
+                "upgrade": ("Upgrade", "#26a69a"),
+                "downgrade": ("Downgrade", "#ef5350"),
+                "initiate": ("Initiate", "#42a5f5"),
+                "maintain": ("Maintain", "#bdbdbd"),
+                "other": ("Other", "#f9c80e"),
+            }
+
+            def _categorize(action: str) -> str:
+                a = str(action).lower()
+                if "upgrade" in a:
+                    return "upgrade"
+                if "downgrade" in a:
+                    return "downgrade"
+                if "initiat" in a:
+                    return "initiate"
+                if any(k in a for k in ("maintain", "reiterat", "reaffirm", "hold")):
+                    return "maintain"
+                return "other"
+
+            # Bucket each rating row by action category
+            buckets: dict[str, dict[str, list]] = {
+                key: {"x": [], "y": [], "symbol": [], "hover": []}
+                for key in categories
+            }
+
+            for pos, (when, row) in enumerate(ratings_normalized.iterrows()):
+                target = targets.iloc[pos]
+                has_target = pd.notna(target)
+                y_val = target if has_target else _price_at(when)
+                if y_val is None:
+                    continue
+
+                cat = _categorize(row.get("action", ""))
+                bucket = buckets[cat]
+                bucket["x"].append(when)
+                bucket["y"].append(y_val)
+                # diamond = plotted at target, open circle = plotted at price
+                bucket["symbol"].append("diamond" if has_target else "circle-open")
+                target_str = f"${target:,.2f}" if has_target else "n/a"
+                bucket["hover"].append(
+                    f"Institution: {row.get('institution', 'N/A')}<br>"
+                    f"Action: {row.get('action', 'N/A')}<br>"
+                    f"Rating: {row.get('rating', 'N/A')}<br>"
+                    f"Target: {target_str}"
+                )
+
+            for key, (label, color) in categories.items():
+                bucket = buckets[key]
+                if not bucket["x"]:
+                    continue
+                fig.add_scatter(
+                    name=label,
+                    x=bucket["x"],
+                    y=bucket["y"],
+                    mode="markers",
+                    marker=dict(
+                        size=10,
+                        color=color,
+                        symbol=bucket["symbol"],
+                        line=dict(width=1, color="#000000"),
+                    ),
+                    hovertext=bucket["hover"],
+                    hovertemplate="<b>%{x|%Y-%m-%d}</b><br>%{hovertext}<extra></extra>",
+                )
+
+        if show and not as_json:
+            fig.show()
+            return None
+        return fig.to_json() if as_json else fig
+
     # --------------------------------------------------------------------- #
     # Helper methods                                                         #
     # --------------------------------------------------------------------- #
 
     @staticmethod
+    def _resolve_price_column(price_data: pd.DataFrame) -> tuple[pd.DataFrame, str]:
+        """
+        Validate ``price_data`` and locate its price column.
+
+        Flattens a MultiIndex column layout (e.g. from ``yf.download()``) and
+        searches for a known price column case-insensitively.
+
+        Returns
+        -------
+        tuple[pandas.DataFrame, str]
+            The (possibly flattened) frame and the resolved price column name.
+
+        Raises
+        ------
+        ValueError
+            If ``price_data`` is empty or has no recognised price column.
+        """
+        if price_data.empty:
+            raise ValueError("price_data cannot be empty")
+
+        # Flatten MultiIndex columns if present (e.g., from yf.download())
+        if isinstance(price_data.columns, pd.MultiIndex):
+            price_data = price_data.copy()
+            price_data.columns = price_data.columns.get_level_values(0)
+
+        for col in ["close", "Close", "price", "Price", "adj_close", "Adj Close"]:
+            if col in price_data.columns:
+                return price_data, col
+
+        raise ValueError(
+            f"price_data must contain a price column (e.g. 'close', 'Close', 'price'). "
+            f"Found columns: {price_data.columns.tolist()}"
+        )
+
+    @staticmethod
+    def _to_naive_index(df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Return a copy of ``df`` with a timezone-naive DatetimeIndex.
+
+        yfinance often returns timezone-aware data while FinBrain returns naive
+        timestamps; normalising both sides lets them be compared and plotted
+        together.
+        """
+        out = df.copy()
+        if out.index.tz is not None:
+            out.index = out.index.tz_localize(None)
+        return out
+
     def _plot_transactions_on_price(
+        self,
         price_data: pd.DataFrame,
         price_col: str,
         transactions_df: pd.DataFrame,
@@ -1344,17 +1568,10 @@ class _PlotNamespace:
         -------
         go.Figure
         """
-        # Normalize timezones - convert both to timezone-naive for comparison
-        # yfinance often returns timezone-aware data, FinBrain returns naive
-        price_data_normalized = price_data.copy()
-        if price_data_normalized.index.tz is not None:
-            price_data_normalized.index = price_data_normalized.index.tz_localize(None)
-
-        transactions_df_normalized = transactions_df.copy()
-        if transactions_df_normalized.index.tz is not None:
-            transactions_df_normalized.index = (
-                transactions_df_normalized.index.tz_localize(None)
-            )
+        # Normalize timezones so yfinance (often tz-aware) and FinBrain (naive)
+        # timestamps can be compared.
+        price_data_normalized = self._to_naive_index(price_data)
+        transactions_df_normalized = self._to_naive_index(transactions_df)
 
         fig = go.Figure(
             layout=dict(

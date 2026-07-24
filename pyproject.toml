@@ -60,3 +60,11 @@ markers = [
 python_version = "3.10"
 files = ["src/finbrain"]
 ignore_missing_imports = true   # third-party libs (pandas, plotly, …) ship no stubs here
+
+[tool.ruff.lint]
+# Pin the rule set explicitly. `ruff check .` otherwise follows whatever ruff's
+# current defaults happen to be, so a new ruff release can turn CI red with no
+# code change (0.16.0 widened the defaults and surfaced hundreds of findings in
+# code that had been passing). These four are ruff's long-standing defaults, so
+# this preserves existing behaviour rather than changing it.
+select = ["E4", "E7", "E9", "F"]

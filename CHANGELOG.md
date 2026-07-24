@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.7] - 2026-07-24
+
+### Changed
+
+- **Tooling**: pinned the ruff rule set to `E4`/`E7`/`E9`/`F` in `[tool.ruff.lint]`. `ruff check .` previously ran with no ruff configuration, so it followed whatever ruff's current defaults were; 0.16.0 widened that selection and turned CI red with 455 findings in unchanged code. These four groups are ruff's long-standing defaults, so enforcement is unchanged — it just no longer moves when ruff releases
+- **Tooling**: mypy no longer follows numpy's stubs. numpy ships inline stubs using PEP 695 `type` statements, which mypy only parses when both its target `python_version` and the interpreter it runs under are 3.12+, so a numpy release aborted the entire run on the lower matrix jobs. Raising `python_version` alone does not fix this — it clears the target check but not the interpreter one. `python_version` stays at `3.10`, so the 3.9 target is still exercised, and no public API surfaces numpy types
+
 ## [0.2.6] - 2026-07-24
 
 ### Added

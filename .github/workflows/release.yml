@@ -5,7 +5,29 @@ on:
     tags: ['v[0-9]*']         # e.g. v0.1.0, v1.2.3
 
 jobs:
+  # Gate the upload on the tagged commit actually passing. The publish job
+  # previously ran straight off the tag push with no dependency on CI, so a
+  # commit with failing checks could still reach PyPI -- and PyPI versions are
+  # immutable, so a bad upload cannot be replaced, only superseded.
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: pip install -e .[dev]
+      - run: ruff check .
+      - run: mypy
+      - run: pytest -q
+
   build:
+    needs: test
     runs-on: ubuntu-latest
 
     steps:

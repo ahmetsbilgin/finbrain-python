@@ -1,6 +1,9 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches: ['**']          # tags are covered by the gate in release.yml
+  pull_request:
 
 jobs:
   test:

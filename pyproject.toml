@@ -61,6 +61,17 @@ python_version = "3.10"
 files = ["src/finbrain"]
 ignore_missing_imports = true   # third-party libs (pandas, plotly, …) ship no stubs here
 
+# numpy ships inline stubs that use PEP 695 `type` statements. mypy refuses to
+# parse those unless BOTH its target `python_version` and the interpreter it is
+# running under are 3.12+, so a numpy release can abort the whole run ("Type
+# statement is only supported in Python 3.12 and greater") on any matrix job
+# below 3.12 -- with no change to this codebase. Nothing in the public API
+# surfaces numpy types, so skip its stubs rather than chasing numpy's baseline.
+[[tool.mypy.overrides]]
+module = ["numpy.*"]
+follow_imports = "skip"
+follow_imports_for_stubs = true
+
 [tool.ruff.lint]
 # Pin the rule set explicitly. `ruff check .` otherwise follows whatever ruff's
 # current defaults happen to be, so a new ruff release can turn CI red with no

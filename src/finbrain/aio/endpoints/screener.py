@@ -107,7 +107,13 @@ class AsyncScreenerAPI:
         limit: int | None = None,
         as_dataframe: bool = False,
     ) -> List[Dict[str, Any]] | pd.DataFrame:
-        """Screen House trades across all tickers."""
+        """
+        Screen House trades across all tickers.
+
+        Rows carry ``symbol``, ``name``, ``date``, ``politician``,
+        ``transactionType``, ``amount`` and ``disclosureDate`` (the public
+        disclosure date, ``None`` on historical rows).
+        """
         params = self._build_params(limit=limit)
         return await self._get("screener/congress/house", params, as_dataframe)
 
@@ -119,7 +125,13 @@ class AsyncScreenerAPI:
         limit: int | None = None,
         as_dataframe: bool = False,
     ) -> List[Dict[str, Any]] | pd.DataFrame:
-        """Screen Senate trades across all tickers."""
+        """
+        Screen Senate trades across all tickers.
+
+        Rows carry ``symbol``, ``name``, ``date``, ``politician``,
+        ``transactionType``, ``amount`` and ``disclosureDate`` (the public
+        disclosure date, ``None`` on historical rows).
+        """
         params = self._build_params(limit=limit)
         return await self._get("screener/congress/senate", params, as_dataframe)
 

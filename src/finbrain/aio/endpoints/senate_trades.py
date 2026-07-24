@@ -24,7 +24,19 @@ class AsyncSenateTradesAPI:
         limit: int | None = None,
         as_dataframe: bool = False,
     ) -> Dict[str, Any] | pd.DataFrame:
-        """Fetch Senate-member trades for a symbol (async)."""
+        """
+        Fetch Senate-member trades for a symbol (async).
+
+        Each row in ``trades`` carries ``date`` (the transaction date),
+        ``politician``, ``transactionType``, ``amount`` and
+        ``disclosureDate`` — the date the trade was publicly disclosed in the
+        member's periodic transaction report. ``disclosureDate`` is ``None``
+        for historical rows collected before the field was captured (``NaN``
+        in the DataFrame branch on newer pandas — use ``pandas.isna``).
+
+        ``date_from``/``date_to`` bound the transaction date, not the
+        disclosure date.
+        """
         params: Dict[str, str] = {}
         if date_from:
             params["startDate"] = to_datestr(date_from)

@@ -95,53 +95,93 @@ def test_screener_insider_trading_dataframe(client, _activate_responses):
 # ── congress house ─────────────────────────────────────────────────────
 def test_screener_congress_house(client, _activate_responses):
     payload = wrap_v2([
-        {"symbol": "AAPL", "name": "Apple", "politician": "Nancy Pelosi"},
+        {
+            "symbol": "AAPL",
+            "name": "Apple",
+            "politician": "Nancy Pelosi",
+            "disclosureDate": "2026-02-05",
+        },
     ])
     stub_json(_activate_responses, "GET", "screener/congress/house", payload, params={"limit": "5"})
     data = client.screener.congress_house(limit=5)
     assert isinstance(data, list)
     assert len(data) == 1
     assert data[0]["politician"] == "Nancy Pelosi"
+    assert data[0]["disclosureDate"] == "2026-02-05"
 
 
 def test_screener_congress_house_dataframe(client, _activate_responses):
     payload = wrap_v2([
-        {"symbol": "AAPL", "name": "Apple", "politician": "Nancy Pelosi"},
-        {"symbol": "MSFT", "name": "Microsoft", "politician": "Dan Crenshaw"},
+        {
+            "symbol": "AAPL",
+            "name": "Apple",
+            "politician": "Nancy Pelosi",
+            "disclosureDate": "2026-02-05",
+        },
+        {
+            "symbol": "MSFT",
+            "name": "Microsoft",
+            "politician": "Dan Crenshaw",
+            "disclosureDate": None,
+        },
     ])
     stub_json(_activate_responses, "GET", "screener/congress/house", payload, params={"limit": "5"})
     df = client.screener.congress_house(limit=5, as_dataframe=True)
     assert isinstance(df, pd.DataFrame)
     assert len(df) == 2
     assert df.index.name == "symbol"
-    assert set(df.columns) == {"name", "politician"}
+    assert set(df.columns) == {"name", "politician", "disclosureDate"}
     assert df.loc["AAPL", "politician"] == "Nancy Pelosi"
+    assert df.loc["AAPL", "disclosureDate"] == "2026-02-05"
+    # Historical rows predate the disclosure-date field; JSON null becomes
+    # NaN once pandas builds the column.
+    assert pd.isna(df.loc["MSFT", "disclosureDate"])
 
 
 # ── congress senate ────────────────────────────────────────────────────
 def test_screener_congress_senate(client, _activate_responses):
     payload = wrap_v2([
-        {"symbol": "AAPL", "name": "Apple", "politician": "John Boozman"},
+        {
+            "symbol": "AAPL",
+            "name": "Apple",
+            "politician": "John Boozman",
+            "disclosureDate": "2026-01-22",
+        },
     ])
     stub_json(_activate_responses, "GET", "screener/congress/senate", payload, params={"limit": "5"})
     data = client.screener.congress_senate(limit=5)
     assert isinstance(data, list)
     assert len(data) == 1
     assert data[0]["politician"] == "John Boozman"
+    assert data[0]["disclosureDate"] == "2026-01-22"
 
 
 def test_screener_congress_senate_dataframe(client, _activate_responses):
     payload = wrap_v2([
-        {"symbol": "AAPL", "name": "Apple", "politician": "John Boozman"},
-        {"symbol": "NVDA", "name": "NVIDIA", "politician": "Tommy Tuberville"},
+        {
+            "symbol": "AAPL",
+            "name": "Apple",
+            "politician": "John Boozman",
+            "disclosureDate": "2026-01-22",
+        },
+        {
+            "symbol": "NVDA",
+            "name": "NVIDIA",
+            "politician": "Tommy Tuberville",
+            "disclosureDate": None,
+        },
     ])
     stub_json(_activate_responses, "GET", "screener/congress/senate", payload, params={"limit": "5"})
     df = client.screener.congress_senate(limit=5, as_dataframe=True)
     assert isinstance(df, pd.DataFrame)
     assert len(df) == 2
     assert df.index.name == "symbol"
-    assert set(df.columns) == {"name", "politician"}
+    assert set(df.columns) == {"name", "politician", "disclosureDate"}
     assert df.loc["NVDA", "politician"] == "Tommy Tuberville"
+    assert df.loc["AAPL", "disclosureDate"] == "2026-01-22"
+    # Historical rows predate the disclosure-date field; JSON null becomes
+    # NaN once pandas builds the column.
+    assert pd.isna(df.loc["NVDA", "disclosureDate"])
 
 
 # ── news ───────────────────────────────────────────────────────────────

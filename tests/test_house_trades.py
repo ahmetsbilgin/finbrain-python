@@ -21,6 +21,7 @@ def test_house_trades_raw_ok(client, _activate_responses):
                 "politician": "Nancy Pelosi",
                 "transactionType": "Purchase",
                 "amount": "$15,001 - $50,000",
+                "disclosureDate": "2024-02-05",
             }
         ],
     })
@@ -31,6 +32,7 @@ def test_house_trades_raw_ok(client, _activate_responses):
     assert data["symbol"] == TICKER
     assert isinstance(data["trades"], list)
     assert data["trades"][0]["politician"] == "Nancy Pelosi"
+    assert data["trades"][0]["disclosureDate"] == "2024-02-05"
 
 
 # ─────────── DataFrame branch ───────────────────────────────────────────
@@ -46,12 +48,14 @@ def test_house_trades_dataframe_ok(client, _activate_responses):
                 "politician": "Nancy Pelosi",
                 "transactionType": "Purchase",
                 "amount": "$15,001 - $50,000",
+                "disclosureDate": "2024-02-05",
             },
             {
                 "date": "2024-01-10",
                 "politician": "Pete Sessions",
                 "transactionType": "Sale",
                 "amount": "$1,001 - $15,000",
+                "disclosureDate": None,
             },
         ],
     })
@@ -62,7 +66,12 @@ def test_house_trades_dataframe_ok(client, _activate_responses):
 
     assert isinstance(df, pd.DataFrame)
     assert len(df) == 2
-    assert set(df.columns) == {"politician", "transactionType", "amount"}
+    assert set(df.columns) == {
+        "politician",
+        "transactionType",
+        "amount",
+        "disclosureDate",
+    }
     assert df.index.name == "date"
     assert pd.api.types.is_datetime64_any_dtype(df.index)
     assert pd.Timestamp("2024-01-15") in df.index
@@ -70,6 +79,10 @@ def test_house_trades_dataframe_ok(client, _activate_responses):
     assert df.loc["2024-01-10", "politician"] == "Pete Sessions"
     assert df.loc["2024-01-15", "transactionType"] == "Purchase"
     assert df.loc["2024-01-15", "amount"] == "$15,001 - $50,000"
+    assert df.loc["2024-01-15", "disclosureDate"] == "2024-02-05"
+    # Historical rows predate the disclosure-date field; JSON null becomes
+    # NaN once pandas builds the column.
+    assert pd.isna(df.loc["2024-01-10", "disclosureDate"])
 
 
 # ─────────── error mapping ──────────────────────────────────────────────

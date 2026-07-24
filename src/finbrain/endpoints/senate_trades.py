@@ -49,6 +49,30 @@ class SenateTradesAPI:
         Returns
         -------
         dict | pandas.DataFrame
+            The raw dict has a ``trades`` list whose rows carry ``date``
+            (the transaction date), ``politician``, ``transactionType``,
+            ``amount`` and ``disclosureDate`` — the date the trade was
+            publicly disclosed in the member's periodic transaction report.
+            The gap between the two dates is the reporting lag.
+
+            ``disclosureDate`` is ``None`` for historical rows collected
+            before the field was captured upstream. In the DataFrame branch
+            ``date`` becomes the index and ``disclosureDate`` is a column
+            whose missing values read as ``None`` or ``NaN`` depending on the
+            pandas version — test them with :func:`pandas.isna`.
+
+        Notes
+        -----
+        ``date_from`` and ``date_to`` bound the **transaction** date, not the
+        disclosure date. A trade executed inside the window is returned even
+        if it was disclosed after ``date_to``.
+
+        Example row::
+
+            {"date": "2026-06-10", "politician": "Jane Doe",
+             "transactionType": "Purchase", "amount": "$1,001 - $15,000",
+             "disclosureDate": "2026-06-25"}
+
         """
         params: Dict[str, str] = {}
         if date_from:

@@ -230,6 +230,9 @@ class TestHouseTrades:
             assert "date" in trades[0]
             assert "politician" in trades[0]
             assert "transactionType" in trades[0]
+            # Present on every row; null on rows collected before the
+            # disclosure-date field was added to the pipeline.
+            assert "disclosureDate" in trades[0]
 
     def test_dataframe(self, fb):
         df = fb.house_trades.ticker(TICKER, as_dataframe=True)
@@ -237,6 +240,9 @@ class TestHouseTrades:
         if len(df) > 0:
             assert df.index.name == "date"
             assert "politician" in df.columns
+            # Survives the DataFrame conversion as a column (values may be
+            # null on rows predating the upstream field).
+            assert "disclosureDate" in df.columns
 
 
 # =====================================================================
@@ -252,6 +258,9 @@ class TestSenateTrades:
         if len(trades) > 0:
             assert "date" in trades[0]
             assert "politician" in trades[0]
+            # Present on every row; null on rows collected before the
+            # disclosure-date field was added to the pipeline.
+            assert "disclosureDate" in trades[0]
 
     def test_dataframe(self, fb):
         df = fb.senate_trades.ticker(TICKER, as_dataframe=True)
@@ -259,6 +268,9 @@ class TestSenateTrades:
         if len(df) > 0:
             assert df.index.name == "date"
             assert "politician" in df.columns
+            # Survives the DataFrame conversion as a column (values may be
+            # null on rows predating the upstream field).
+            assert "disclosureDate" in df.columns
 
 
 # =====================================================================
@@ -503,10 +515,14 @@ class TestScreener:
     def test_congress_house(self, fb):
         data = fb.screener.congress_house(limit=5)
         assert isinstance(data, list)
+        if data:
+            assert "disclosureDate" in data[0]
 
     def test_congress_senate(self, fb):
         data = fb.screener.congress_senate(limit=5)
         assert isinstance(data, list)
+        if data:
+            assert "disclosureDate" in data[0]
 
     def test_news(self, fb):
         data = fb.screener.news(limit=5)

@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.6] - 2026-07-24
+
+### Added
+
+- **Congressional disclosure date**: House and Senate trade rows now carry `disclosureDate` alongside the transaction `date` — the date the trade was publicly disclosed in the member's periodic transaction report. The gap between the two is the reporting lag. Available on `fb.house_trades.ticker()`, `fb.senate_trades.ticker()`, their async equivalents, and the `fb.screener.congress_house()` / `fb.screener.congress_senate()` rows
+- **Congressional trade date documentation**: README section explaining the two dates, and expanded docstrings on the sync/async ticker and screener methods
+- **Tests**: Unit tests assert `disclosureDate` passes through in both the raw-dict and DataFrame branches, including the null case for historical rows; integration tests assert the key is present on live responses
+
+### Changed
+
+- **DataFrame shape**: `fb.house_trades.ticker(..., as_dataframe=True)`, `fb.senate_trades.ticker(..., as_dataframe=True)` and the congress screener frames gain a `disclosureDate` column. Code that asserts an exact column set (`set(df.columns) == {...}`) or compares frames for equality needs updating
+
+### Notes
+
+- `disclosureDate` is `null` for rows collected before the upstream pipeline captured the field. In a DataFrame the missing value reads as `None` or `NaN` depending on the pandas version, so test it with `pandas.isna()` rather than `is None`
+- **`.dropna()` caveat**: because historical rows have no disclosure date, calling `.dropna()` on a congressional trades DataFrame now drops those rows entirely. Use `.dropna(subset=[...])` if that is not what you want
+- `date_from` / `date_to` bound the transaction date, not the disclosure date
+- The raw-dict branch is purely additive — no call-site changes are required there to receive the new field
+
 ## [0.2.5] - 2026-06-18
 
 ### Added

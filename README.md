@@ -56,6 +56,7 @@ fb.analyst_ratings.ticker("AMZN",
                           as_dataframe=True)
 
 # ---------- house trades ----------
+# Rows include `disclosureDate` alongside the transaction `date`.
 fb.house_trades.ticker("AMZN",
                        date_from="2025-01-01",
                        date_to="2025-06-30",
@@ -127,10 +128,43 @@ fb.screener.insider_trading(limit=50)
 fb.screener.reddit_mentions(limit=100, as_dataframe=True)
 fb.screener.government_contracts(limit=100, as_dataframe=True)
 fb.screener.patent_filings(limit=100, as_dataframe=True)
+fb.screener.congress_house(limit=50)     # rows carry `disclosureDate`
+fb.screener.congress_senate(limit=50)
 
 # ---------- recent data ----------
 fb.recent.news(limit=100, as_dataframe=True)
 fb.recent.analyst_ratings(limit=50)
+```
+
+### Congressional trade dates
+
+House and Senate trade rows carry **two** dates, and the gap between them is
+the reporting lag — often weeks:
+
+| Field            | Meaning                                                          |
+| ---------------- | ---------------------------------------------------------------- |
+| `date`           | Transaction date — when the member actually bought or sold        |
+| `disclosureDate` | Public disclosure date — when the periodic transaction report ran |
+
+`disclosureDate` is `null` on historical rows collected before the field was
+captured upstream. With `as_dataframe=True`, `date` is the **index** and
+`disclosureDate` is a column whose missing values read as `None` or `NaN`
+depending on your pandas version — test them with `pandas.isna()` rather than
+`is None`. Note that `.dropna()` on such a frame will now discard every
+historical row. The same field is present on `fb.screener.congress_house()`
+and `fb.screener.congress_senate()` rows.
+
+`date_from` / `date_to` bound the **transaction** date, not the disclosure
+date — a trade executed inside the window is returned even if it was disclosed
+after `date_to`.
+
+```python
+trades = fb.house_trades.ticker("AMZN")["trades"]
+lag_days = [
+    (pd.Timestamp(t["disclosureDate"]) - pd.Timestamp(t["date"])).days
+    for t in trades
+    if t["disclosureDate"]
+]
 ```
 
 ## ⚡ Async Usage

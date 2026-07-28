@@ -21,6 +21,9 @@ def test_senate_trades_raw_ok(client, _activate_responses):
                 "politician": "Shelley Moore Capito",
                 "transactionType": "Purchase",
                 "amount": "$1,001 - $15,000",
+                "owner": "SP",
+                "amountRaw": "$1,001-$15,000",
+                "amountFlag": None,
                 "disclosureDate": "2024-01-30",
             }
         ],
@@ -33,6 +36,10 @@ def test_senate_trades_raw_ok(client, _activate_responses):
     assert isinstance(data["trades"], list)
     assert data["trades"][0]["politician"] == "Shelley Moore Capito"
     assert data["trades"][0]["disclosureDate"] == "2024-01-30"
+    assert data["trades"][0]["owner"] == "SP"
+    # The bracket was normalized, so the originally filed string survives.
+    assert data["trades"][0]["amountRaw"] == "$1,001-$15,000"
+    assert data["trades"][0]["amountFlag"] is None
 
 
 # ─────────── DataFrame branch ───────────────────────────────────────────
@@ -48,13 +55,19 @@ def test_senate_trades_dataframe_ok(client, _activate_responses):
                 "politician": "Shelley Moore Capito",
                 "transactionType": "Purchase",
                 "amount": "$1,001 - $15,000",
+                "owner": "SELF",
+                "amountRaw": None,
+                "amountFlag": None,
                 "disclosureDate": "2024-01-30",
             },
             {
                 "date": "2024-01-08",
                 "politician": "John Boozman",
                 "transactionType": "Purchase",
-                "amount": "$1,001 - $15,000",
+                "amount": "$1,001 - $50,000",
+                "owner": None,
+                "amountRaw": None,
+                "amountFlag": "ambiguous",
                 "disclosureDate": None,
             },
         ],
@@ -70,6 +83,9 @@ def test_senate_trades_dataframe_ok(client, _activate_responses):
         "politician",
         "transactionType",
         "amount",
+        "owner",
+        "amountRaw",
+        "amountFlag",
         "disclosureDate",
     }
     assert df.index.name == "date"
@@ -78,11 +94,16 @@ def test_senate_trades_dataframe_ok(client, _activate_responses):
     assert pd.Timestamp("2024-01-08") in df.index
     assert df.loc["2024-01-08", "politician"] == "John Boozman"
     assert df.loc["2024-01-15", "transactionType"] == "Purchase"
-    assert df.loc["2024-01-08", "amount"] == "$1,001 - $15,000"
+    assert df.loc["2024-01-08", "amount"] == "$1,001 - $50,000"
     assert df.loc["2024-01-15", "disclosureDate"] == "2024-01-30"
-    # Historical rows predate the disclosure-date field; JSON null becomes
-    # NaN once pandas builds the column.
+    assert df.loc["2024-01-15", "owner"] == "SELF"
+    # A flagged amount keeps the raw filed string in `amount`.
+    assert df.loc["2024-01-08", "amountFlag"] == "ambiguous"
+    # Historical rows predate the disclosure-date and owner fields; JSON null
+    # becomes NaN once pandas builds the column.
     assert pd.isna(df.loc["2024-01-08", "disclosureDate"])
+    assert pd.isna(df.loc["2024-01-08", "owner"])
+    assert pd.isna(df.loc["2024-01-15", "amountFlag"])
 
 
 # ─────────── error mapping ──────────────────────────────────────────────

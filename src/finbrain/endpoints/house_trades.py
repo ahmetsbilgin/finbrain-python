@@ -51,15 +51,33 @@ class HouseTradesAPI:
         dict | pandas.DataFrame
             The raw dict has a ``trades`` list whose rows carry ``date``
             (the transaction date), ``politician``, ``transactionType``,
-            ``amount`` and ``disclosureDate`` — the date the trade was
-            publicly disclosed in the member's periodic transaction report.
-            The gap between the two dates is the reporting lag.
+            ``amount``, ``owner``, ``amountRaw``, ``amountFlag`` and
+            ``disclosureDate`` — the date the trade was publicly disclosed
+            in the member's periodic transaction report. The gap between the
+            two dates is the reporting lag.
 
-            ``disclosureDate`` is ``None`` for historical rows collected
-            before the field was captured upstream. In the DataFrame branch
-            ``date`` becomes the index and ``disclosureDate`` is a column
-            whose missing values read as ``None`` or ``NaN`` depending on the
-            pandas version — test them with :func:`pandas.isna`.
+            ``owner`` is the beneficial owner of the traded account:
+            ``"SELF"``, ``"SP"`` (spouse), ``"DC"`` (dependent child),
+            ``"JT"`` (joint), or an account code. House filings that leave
+            the owner column blank report as ``"SELF"``, per the House
+            instructions for the PTR form.
+
+            ``amount`` is normalized to the statutory STOCK Act bracket
+            (e.g. ``"$1,001 - $15,000"``) whenever the filed string is an
+            unambiguous formatting variant of one. On rows that were
+            normalized, ``amountRaw`` preserves the string as originally
+            filed. When the filed amount could not be safely normalized,
+            ``amount`` keeps the raw filed string (or ``"Unknown"`` when the
+            filing had no usable amount) and ``amountFlag`` is ``"review"``
+            or ``"ambiguous"``; on all other rows ``amountRaw`` and
+            ``amountFlag`` are ``None``.
+
+            ``disclosureDate`` and ``owner`` are ``None`` for historical
+            rows collected before the fields were captured upstream. In the
+            DataFrame branch ``date`` becomes the index and the remaining
+            fields are columns whose missing values read as ``None`` or
+            ``NaN`` depending on the pandas version — test them with
+            :func:`pandas.isna`.
 
         Notes
         -----
@@ -71,7 +89,8 @@ class HouseTradesAPI:
 
             {"date": "2026-06-15", "politician": "Jane Doe",
              "transactionType": "Purchase", "amount": "$1,001 - $15,000",
-             "disclosureDate": "2026-07-01"}
+             "owner": "JT", "amountRaw": "$1,001 - $15,000 *",
+             "amountFlag": None, "disclosureDate": "2026-07-01"}
 
         """
         params: Dict[str, str] = {}

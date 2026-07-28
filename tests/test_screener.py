@@ -99,6 +99,7 @@ def test_screener_congress_house(client, _activate_responses):
             "symbol": "AAPL",
             "name": "Apple",
             "politician": "Nancy Pelosi",
+            "owner": "SP",
             "disclosureDate": "2026-02-05",
         },
     ])
@@ -107,6 +108,7 @@ def test_screener_congress_house(client, _activate_responses):
     assert isinstance(data, list)
     assert len(data) == 1
     assert data[0]["politician"] == "Nancy Pelosi"
+    assert data[0]["owner"] == "SP"
     assert data[0]["disclosureDate"] == "2026-02-05"
 
 
@@ -116,12 +118,14 @@ def test_screener_congress_house_dataframe(client, _activate_responses):
             "symbol": "AAPL",
             "name": "Apple",
             "politician": "Nancy Pelosi",
+            "owner": "SP",
             "disclosureDate": "2026-02-05",
         },
         {
             "symbol": "MSFT",
             "name": "Microsoft",
             "politician": "Dan Crenshaw",
+            "owner": None,
             "disclosureDate": None,
         },
     ])
@@ -130,12 +134,14 @@ def test_screener_congress_house_dataframe(client, _activate_responses):
     assert isinstance(df, pd.DataFrame)
     assert len(df) == 2
     assert df.index.name == "symbol"
-    assert set(df.columns) == {"name", "politician", "disclosureDate"}
+    assert set(df.columns) == {"name", "politician", "owner", "disclosureDate"}
     assert df.loc["AAPL", "politician"] == "Nancy Pelosi"
+    assert df.loc["AAPL", "owner"] == "SP"
     assert df.loc["AAPL", "disclosureDate"] == "2026-02-05"
-    # Historical rows predate the disclosure-date field; JSON null becomes
-    # NaN once pandas builds the column.
+    # Historical rows predate the disclosure-date and owner fields; JSON null
+    # becomes NaN once pandas builds the column.
     assert pd.isna(df.loc["MSFT", "disclosureDate"])
+    assert pd.isna(df.loc["MSFT", "owner"])
 
 
 # ── congress senate ────────────────────────────────────────────────────
@@ -145,6 +151,7 @@ def test_screener_congress_senate(client, _activate_responses):
             "symbol": "AAPL",
             "name": "Apple",
             "politician": "John Boozman",
+            "owner": "UNKNOWN",
             "disclosureDate": "2026-01-22",
         },
     ])
@@ -153,6 +160,7 @@ def test_screener_congress_senate(client, _activate_responses):
     assert isinstance(data, list)
     assert len(data) == 1
     assert data[0]["politician"] == "John Boozman"
+    assert data[0]["owner"] == "UNKNOWN"
     assert data[0]["disclosureDate"] == "2026-01-22"
 
 
@@ -162,12 +170,14 @@ def test_screener_congress_senate_dataframe(client, _activate_responses):
             "symbol": "AAPL",
             "name": "Apple",
             "politician": "John Boozman",
+            "owner": "SELF",
             "disclosureDate": "2026-01-22",
         },
         {
             "symbol": "NVDA",
             "name": "NVIDIA",
             "politician": "Tommy Tuberville",
+            "owner": None,
             "disclosureDate": None,
         },
     ])
@@ -176,12 +186,14 @@ def test_screener_congress_senate_dataframe(client, _activate_responses):
     assert isinstance(df, pd.DataFrame)
     assert len(df) == 2
     assert df.index.name == "symbol"
-    assert set(df.columns) == {"name", "politician", "disclosureDate"}
+    assert set(df.columns) == {"name", "politician", "owner", "disclosureDate"}
     assert df.loc["NVDA", "politician"] == "Tommy Tuberville"
+    assert df.loc["AAPL", "owner"] == "SELF"
     assert df.loc["AAPL", "disclosureDate"] == "2026-01-22"
-    # Historical rows predate the disclosure-date field; JSON null becomes
-    # NaN once pandas builds the column.
+    # Historical rows predate the disclosure-date and owner fields; JSON null
+    # becomes NaN once pandas builds the column.
     assert pd.isna(df.loc["NVDA", "disclosureDate"])
+    assert pd.isna(df.loc["NVDA", "owner"])
 
 
 # ── news ───────────────────────────────────────────────────────────────

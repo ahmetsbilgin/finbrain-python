@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.8] - 2026-07-28
+
+### Added
+
+- **Congressional account owner**: House and Senate trade rows now carry `owner` — the beneficial owner of the traded account: `SELF`, `SP` (spouse), `DC` (dependent child), `JT` (joint), or an account code. Senate filings that leave the owner column blank report `UNKNOWN`; House filings that leave it blank report `SELF`, per the House PTR-form instructions. Available on `fb.house_trades.ticker()`, `fb.senate_trades.ticker()`, their async equivalents, and the `fb.screener.congress_house()` / `fb.screener.congress_senate()` rows
+- **Congressional amount normalization metadata**: ticker-level trade rows also carry `amountRaw` and `amountFlag`. `amount` is now normalized to the ten statutory STOCK Act brackets whenever the filed string is an unambiguous formatting variant of one (open-ended categories like `Over $1,000,000` are kept as filed); on normalized rows `amountRaw` preserves the string as originally filed. When the filed amount could not be safely normalized, `amount` keeps the raw filed string (or `Unknown` when the filing had no usable amount) and `amountFlag` is `review` or `ambiguous`; on all other rows both fields are `null`
+- **Documentation**: README "Congressional trade fields" section covering the new fields, and expanded docstrings on the sync/async ticker and screener methods
+- **Tests**: Unit tests assert the new fields pass through in both the raw-dict and DataFrame branches, including the null cases; integration tests assert the keys are present on live responses
+
+### Changed
+
+- **DataFrame shape**: `fb.house_trades.ticker(..., as_dataframe=True)` and `fb.senate_trades.ticker(..., as_dataframe=True)` gain `owner`, `amountRaw` and `amountFlag` columns; the congress screener frames gain an `owner` column. Code that asserts an exact column set (`set(df.columns) == {...}`) or compares frames for equality needs updating
+
+### Notes
+
+- `owner` is `null` on rows collected before the upstream pipeline captured the field, like `disclosureDate` — the `.dropna()` and `pandas.isna()` caveats from 0.2.6 apply to it as well
+- The raw-dict branch is purely additive — no call-site changes are required to receive the new fields
+
 ## [0.2.7] - 2026-07-24
 
 ### Changed

@@ -56,7 +56,8 @@ fb.analyst_ratings.ticker("AMZN",
                           as_dataframe=True)
 
 # ---------- house trades ----------
-# Rows include `disclosureDate` alongside the transaction `date`.
+# Rows include `disclosureDate`, `owner`, `amountRaw` and `amountFlag`
+# alongside the transaction `date` — see "Congressional trade fields" below.
 fb.house_trades.ticker("AMZN",
                        date_from="2025-01-01",
                        date_to="2025-06-30",
@@ -128,7 +129,7 @@ fb.screener.insider_trading(limit=50)
 fb.screener.reddit_mentions(limit=100, as_dataframe=True)
 fb.screener.government_contracts(limit=100, as_dataframe=True)
 fb.screener.patent_filings(limit=100, as_dataframe=True)
-fb.screener.congress_house(limit=50)     # rows carry `disclosureDate`
+fb.screener.congress_house(limit=50)     # rows carry `disclosureDate` and `owner`
 fb.screener.congress_senate(limit=50)
 
 # ---------- recent data ----------
@@ -136,7 +137,7 @@ fb.recent.news(limit=100, as_dataframe=True)
 fb.recent.analyst_ratings(limit=50)
 ```
 
-### Congressional trade dates
+### Congressional trade fields
 
 House and Senate trade rows carry **two** dates, and the gap between them is
 the reporting lag — often weeks:
@@ -146,13 +147,31 @@ the reporting lag — often weeks:
 | `date`           | Transaction date — when the member actually bought or sold        |
 | `disclosureDate` | Public disclosure date — when the periodic transaction report ran |
 
-`disclosureDate` is `null` on historical rows collected before the field was
-captured upstream. With `as_dataframe=True`, `date` is the **index** and
-`disclosureDate` is a column whose missing values read as `None` or `NaN`
-depending on your pandas version — test them with `pandas.isna()` rather than
-`is None`. Note that `.dropna()` on such a frame will now discard every
-historical row. The same field is present on `fb.screener.congress_house()`
-and `fb.screener.congress_senate()` rows.
+Rows also identify **whose account** traded and how the filed amount was
+normalized:
+
+| Field        | Meaning                                                                                                                                          |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `owner`      | Beneficial owner of the account: `SELF`, `SP` (spouse), `DC` (dependent child), `JT` (joint), or an account code                                 |
+| `amountRaw`  | The amount string as originally filed — set only when `amount` was rewritten to the canonical STOCK Act bracket, `null` otherwise                |
+| `amountFlag` | `null` on clean rows; `review` or `ambiguous` when the filed amount could not be safely normalized (then `amount` keeps the raw string as filed) |
+
+`amount` is normalized to the ten statutory STOCK Act brackets (e.g.
+`"$1,001 - $15,000"`) whenever the filed string is an unambiguous formatting
+variant of one; open-ended filing categories like `"Over $1,000,000"` are
+kept as filed. A filing with no usable amount at all reports `amount` as
+`"Unknown"` with `amountFlag` = `review`. Senate filings that leave the owner
+column blank report `owner` as `UNKNOWN`; House filings that leave it blank
+report `SELF`, per the House PTR-form instructions.
+
+`disclosureDate` and `owner` are `null` on historical rows collected before
+the fields were captured upstream. With `as_dataframe=True`, `date` is the
+**index** and the other fields are columns whose missing values read as
+`None` or `NaN` depending on your pandas version — test them with
+`pandas.isna()` rather than `is None`. Note that `.dropna()` on such a frame
+will discard every row with any missing field — use `.dropna(subset=[...])`.
+`disclosureDate` and `owner` are also present on
+`fb.screener.congress_house()` and `fb.screener.congress_senate()` rows.
 
 `date_from` / `date_to` bound the **transaction** date, not the disclosure
 date — a trade executed inside the window is returned even if it was disclosed
@@ -164,6 +183,12 @@ lag_days = [
     (pd.Timestamp(t["disclosureDate"]) - pd.Timestamp(t["date"])).days
     for t in trades
     if t["disclosureDate"]
+]
+
+# Only the member's own trades, skipping flagged amounts
+own = [
+    t for t in trades
+    if t["owner"] == "SELF" and t["amountFlag"] is None
 ]
 ```
 

@@ -28,11 +28,22 @@ class AsyncSenateTradesAPI:
         Fetch Senate-member trades for a symbol (async).
 
         Each row in ``trades`` carries ``date`` (the transaction date),
-        ``politician``, ``transactionType``, ``amount`` and
-        ``disclosureDate`` — the date the trade was publicly disclosed in the
-        member's periodic transaction report. ``disclosureDate`` is ``None``
-        for historical rows collected before the field was captured (``NaN``
-        in the DataFrame branch on newer pandas — use ``pandas.isna``).
+        ``politician``, ``transactionType``, ``amount``, ``owner``,
+        ``amountRaw``, ``amountFlag`` and ``disclosureDate`` — the date the
+        trade was publicly disclosed in the member's periodic transaction
+        report.
+
+        ``owner`` is the beneficial owner of the traded account: ``"SELF"``,
+        ``"SP"`` (spouse), ``"DC"`` (dependent child), ``"JT"`` (joint), an
+        account code, or ``"UNKNOWN"`` when the Senate filing left the owner
+        column blank. ``amountRaw`` preserves the originally filed amount
+        string on rows whose ``amount`` was normalized to a STOCK Act
+        bracket; ``amountFlag`` is ``"review"`` or ``"ambiguous"`` when the
+        amount could not be safely normalized (``None`` otherwise).
+
+        ``disclosureDate`` and ``owner`` are ``None`` for historical rows
+        collected before the fields were captured (``NaN`` in the DataFrame
+        branch on newer pandas — use ``pandas.isna``).
 
         ``date_from``/``date_to`` bound the transaction date, not the
         disclosure date.

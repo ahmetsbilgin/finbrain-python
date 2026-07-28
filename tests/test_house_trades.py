@@ -21,6 +21,9 @@ def test_house_trades_raw_ok(client, _activate_responses):
                 "politician": "Nancy Pelosi",
                 "transactionType": "Purchase",
                 "amount": "$15,001 - $50,000",
+                "owner": "JT",
+                "amountRaw": "$15,001 - $50,000 *",
+                "amountFlag": None,
                 "disclosureDate": "2024-02-05",
             }
         ],
@@ -33,6 +36,10 @@ def test_house_trades_raw_ok(client, _activate_responses):
     assert isinstance(data["trades"], list)
     assert data["trades"][0]["politician"] == "Nancy Pelosi"
     assert data["trades"][0]["disclosureDate"] == "2024-02-05"
+    assert data["trades"][0]["owner"] == "JT"
+    # The bracket was normalized, so the originally filed string survives.
+    assert data["trades"][0]["amountRaw"] == "$15,001 - $50,000 *"
+    assert data["trades"][0]["amountFlag"] is None
 
 
 # ─────────── DataFrame branch ───────────────────────────────────────────
@@ -48,13 +55,19 @@ def test_house_trades_dataframe_ok(client, _activate_responses):
                 "politician": "Nancy Pelosi",
                 "transactionType": "Purchase",
                 "amount": "$15,001 - $50,000",
+                "owner": "SP",
+                "amountRaw": None,
+                "amountFlag": None,
                 "disclosureDate": "2024-02-05",
             },
             {
                 "date": "2024-01-10",
                 "politician": "Pete Sessions",
                 "transactionType": "Sale",
-                "amount": "$1,001 - $15,000",
+                "amount": "Unknown",
+                "owner": None,
+                "amountRaw": None,
+                "amountFlag": "review",
                 "disclosureDate": None,
             },
         ],
@@ -70,6 +83,9 @@ def test_house_trades_dataframe_ok(client, _activate_responses):
         "politician",
         "transactionType",
         "amount",
+        "owner",
+        "amountRaw",
+        "amountFlag",
         "disclosureDate",
     }
     assert df.index.name == "date"
@@ -80,9 +96,16 @@ def test_house_trades_dataframe_ok(client, _activate_responses):
     assert df.loc["2024-01-15", "transactionType"] == "Purchase"
     assert df.loc["2024-01-15", "amount"] == "$15,001 - $50,000"
     assert df.loc["2024-01-15", "disclosureDate"] == "2024-02-05"
-    # Historical rows predate the disclosure-date field; JSON null becomes
-    # NaN once pandas builds the column.
+    assert df.loc["2024-01-15", "owner"] == "SP"
+    # A filing with no usable amount stores the explicit "Unknown"
+    # placeholder and carries a review flag.
+    assert df.loc["2024-01-10", "amount"] == "Unknown"
+    assert df.loc["2024-01-10", "amountFlag"] == "review"
+    # Historical rows predate the disclosure-date and owner fields; JSON null
+    # becomes NaN once pandas builds the column.
     assert pd.isna(df.loc["2024-01-10", "disclosureDate"])
+    assert pd.isna(df.loc["2024-01-10", "owner"])
+    assert pd.isna(df.loc["2024-01-15", "amountFlag"])
 
 
 # ─────────── error mapping ──────────────────────────────────────────────

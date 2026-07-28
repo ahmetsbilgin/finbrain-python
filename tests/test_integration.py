@@ -231,8 +231,14 @@ class TestHouseTrades:
             assert "politician" in trades[0]
             assert "transactionType" in trades[0]
             # Present on every row; null on rows collected before the
-            # disclosure-date field was added to the pipeline.
+            # fields were added to the pipeline.
             assert "disclosureDate" in trades[0]
+            assert "owner" in trades[0]
+            # Amount normalization metadata: null unless the filed amount
+            # was rewritten to a STOCK Act bracket (amountRaw) or could not
+            # be safely normalized (amountFlag).
+            assert "amountRaw" in trades[0]
+            assert "amountFlag" in trades[0]
 
     def test_dataframe(self, fb):
         df = fb.house_trades.ticker(TICKER, as_dataframe=True)
@@ -240,9 +246,12 @@ class TestHouseTrades:
         if len(df) > 0:
             assert df.index.name == "date"
             assert "politician" in df.columns
-            # Survives the DataFrame conversion as a column (values may be
-            # null on rows predating the upstream field).
+            # Survive the DataFrame conversion as columns (values may be
+            # null on rows predating the upstream fields).
             assert "disclosureDate" in df.columns
+            assert "owner" in df.columns
+            assert "amountRaw" in df.columns
+            assert "amountFlag" in df.columns
 
 
 # =====================================================================
@@ -259,8 +268,14 @@ class TestSenateTrades:
             assert "date" in trades[0]
             assert "politician" in trades[0]
             # Present on every row; null on rows collected before the
-            # disclosure-date field was added to the pipeline.
+            # fields were added to the pipeline.
             assert "disclosureDate" in trades[0]
+            assert "owner" in trades[0]
+            # Amount normalization metadata: null unless the filed amount
+            # was rewritten to a STOCK Act bracket (amountRaw) or could not
+            # be safely normalized (amountFlag).
+            assert "amountRaw" in trades[0]
+            assert "amountFlag" in trades[0]
 
     def test_dataframe(self, fb):
         df = fb.senate_trades.ticker(TICKER, as_dataframe=True)
@@ -268,9 +283,12 @@ class TestSenateTrades:
         if len(df) > 0:
             assert df.index.name == "date"
             assert "politician" in df.columns
-            # Survives the DataFrame conversion as a column (values may be
-            # null on rows predating the upstream field).
+            # Survive the DataFrame conversion as columns (values may be
+            # null on rows predating the upstream fields).
             assert "disclosureDate" in df.columns
+            assert "owner" in df.columns
+            assert "amountRaw" in df.columns
+            assert "amountFlag" in df.columns
 
 
 # =====================================================================
@@ -517,12 +535,14 @@ class TestScreener:
         assert isinstance(data, list)
         if data:
             assert "disclosureDate" in data[0]
+            assert "owner" in data[0]
 
     def test_congress_senate(self, fb):
         data = fb.screener.congress_senate(limit=5)
         assert isinstance(data, list)
         if data:
             assert "disclosureDate" in data[0]
+            assert "owner" in data[0]
 
     def test_news(self, fb):
         data = fb.screener.news(limit=5)

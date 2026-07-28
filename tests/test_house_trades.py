@@ -101,7 +101,7 @@ def test_house_trades_dataframe_ok(client, _activate_responses):
     # placeholder and carries a review flag.
     assert df.loc["2024-01-10", "amount"] == "Unknown"
     assert df.loc["2024-01-10", "amountFlag"] == "review"
-    # Historical rows predate the disclosure-date and owner fields; JSON null
+    # Nullable fields (rows a reconcile upload could not fill); JSON null
     # becomes NaN once pandas builds the column.
     assert pd.isna(df.loc["2024-01-10", "disclosureDate"])
     assert pd.isna(df.loc["2024-01-10", "owner"])

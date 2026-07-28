@@ -119,7 +119,8 @@ class ScreenerAPI:
         ``transactionType``, ``amount``, ``owner`` (beneficial owner of the
         account: ``"SELF"``, ``"SP"``, ``"DC"``, ``"JT"``, or an account
         code) and ``disclosureDate`` (the public disclosure date). ``owner``
-        and ``disclosureDate`` are ``None`` on historical rows.
+        and ``disclosureDate`` are nullable, though rare — historical rows
+        were backfilled upstream.
         """
         params = self._build_params(limit=limit)
         return self._get("screener/congress/house", params, as_dataframe)
@@ -140,7 +141,7 @@ class ScreenerAPI:
         account: ``"SELF"``, ``"SP"``, ``"DC"``, ``"JT"``, an account code,
         or ``"UNKNOWN"`` for blank Senate filings) and ``disclosureDate``
         (the public disclosure date). ``owner`` and ``disclosureDate`` are
-        ``None`` on historical rows.
+        nullable, though rare — historical rows were backfilled upstream.
         """
         params = self._build_params(limit=limit)
         return self._get("screener/congress/senate", params, as_dataframe)

@@ -99,7 +99,7 @@ def test_senate_trades_dataframe_ok(client, _activate_responses):
     assert df.loc["2024-01-15", "owner"] == "SELF"
     # A flagged amount keeps the raw filed string in `amount`.
     assert df.loc["2024-01-08", "amountFlag"] == "ambiguous"
-    # Historical rows predate the disclosure-date and owner fields; JSON null
+    # Nullable fields (rows a reconcile upload could not fill); JSON null
     # becomes NaN once pandas builds the column.
     assert pd.isna(df.loc["2024-01-08", "disclosureDate"])
     assert pd.isna(df.loc["2024-01-08", "owner"])

@@ -72,12 +72,12 @@ class HouseTradesAPI:
             or ``"ambiguous"``; on all other rows ``amountRaw`` and
             ``amountFlag`` are ``None``.
 
-            ``disclosureDate`` and ``owner`` are ``None`` for historical
-            rows collected before the fields were captured upstream. In the
-            DataFrame branch ``date`` becomes the index and the remaining
-            fields are columns whose missing values read as ``None`` or
-            ``NaN`` depending on the pandas version — test them with
-            :func:`pandas.isna`.
+            ``disclosureDate`` and ``owner`` are nullable; historical rows
+            were backfilled in place by the upstream pipeline, so missing
+            values are rare but possible. In the DataFrame branch ``date``
+            becomes the index and the remaining fields are columns whose
+            missing values read as ``None`` or ``NaN`` depending on the
+            pandas version — test them with :func:`pandas.isna`.
 
         Notes
         -----

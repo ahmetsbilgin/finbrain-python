@@ -138,7 +138,7 @@ def test_screener_congress_house_dataframe(client, _activate_responses):
     assert df.loc["AAPL", "politician"] == "Nancy Pelosi"
     assert df.loc["AAPL", "owner"] == "SP"
     assert df.loc["AAPL", "disclosureDate"] == "2026-02-05"
-    # Historical rows predate the disclosure-date and owner fields; JSON null
+    # Nullable fields (rows a reconcile upload could not fill); JSON null
     # becomes NaN once pandas builds the column.
     assert pd.isna(df.loc["MSFT", "disclosureDate"])
     assert pd.isna(df.loc["MSFT", "owner"])
@@ -190,7 +190,7 @@ def test_screener_congress_senate_dataframe(client, _activate_responses):
     assert df.loc["NVDA", "politician"] == "Tommy Tuberville"
     assert df.loc["AAPL", "owner"] == "SELF"
     assert df.loc["AAPL", "disclosureDate"] == "2026-01-22"
-    # Historical rows predate the disclosure-date and owner fields; JSON null
+    # Nullable fields (rows a reconcile upload could not fill); JSON null
     # becomes NaN once pandas builds the column.
     assert pd.isna(df.loc["NVDA", "disclosureDate"])
     assert pd.isna(df.loc["NVDA", "owner"])

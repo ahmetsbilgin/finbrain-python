@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Notes
 
-- `owner` is `null` on rows collected before the upstream pipeline captured the field, like `disclosureDate` — the `.dropna()` and `pandas.isna()` caveats from 0.2.6 apply to it as well
+- `owner` and `disclosureDate` are nullable, but nulls are rare in practice: the pipeline's key-hygiene reconcile upload backfilled both fields onto historical rows in place. Code should still handle missing values with `pandas.isna()` — the `.dropna()` caveat from 0.2.6 applies to any row a reconcile could not fill
 - The raw-dict branch is purely additive — no call-site changes are required to receive the new fields
 
 ## [0.2.7] - 2026-07-24

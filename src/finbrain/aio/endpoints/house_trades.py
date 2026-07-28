@@ -41,9 +41,9 @@ class AsyncHouseTradesAPI:
         bracket; ``amountFlag`` is ``"review"`` or ``"ambiguous"`` when the
         amount could not be safely normalized (``None`` otherwise).
 
-        ``disclosureDate`` and ``owner`` are ``None`` for historical rows
-        collected before the fields were captured (``NaN`` in the DataFrame
-        branch on newer pandas — use ``pandas.isna``).
+        ``disclosureDate`` and ``owner`` are nullable; historical rows were
+        backfilled upstream, so missing values are rare but possible (``NaN``
+        in the DataFrame branch on newer pandas — use ``pandas.isna``).
 
         ``date_from``/``date_to`` bound the transaction date, not the
         disclosure date.

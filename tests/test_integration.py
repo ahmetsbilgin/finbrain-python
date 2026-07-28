@@ -230,8 +230,8 @@ class TestHouseTrades:
             assert "date" in trades[0]
             assert "politician" in trades[0]
             assert "transactionType" in trades[0]
-            # Present on every row; null on rows collected before the
-            # fields were added to the pipeline.
+            # Present on every row; nullable, though historical rows were
+            # backfilled upstream so nulls are rare.
             assert "disclosureDate" in trades[0]
             assert "owner" in trades[0]
             # Amount normalization metadata: null unless the filed amount
@@ -246,8 +246,8 @@ class TestHouseTrades:
         if len(df) > 0:
             assert df.index.name == "date"
             assert "politician" in df.columns
-            # Survive the DataFrame conversion as columns (values may be
-            # null on rows predating the upstream fields).
+            # Survive the DataFrame conversion as columns (values are
+            # nullable, so missing entries read as NaN).
             assert "disclosureDate" in df.columns
             assert "owner" in df.columns
             assert "amountRaw" in df.columns
@@ -267,8 +267,8 @@ class TestSenateTrades:
         if len(trades) > 0:
             assert "date" in trades[0]
             assert "politician" in trades[0]
-            # Present on every row; null on rows collected before the
-            # fields were added to the pipeline.
+            # Present on every row; nullable, though historical rows were
+            # backfilled upstream so nulls are rare.
             assert "disclosureDate" in trades[0]
             assert "owner" in trades[0]
             # Amount normalization metadata: null unless the filed amount
@@ -283,8 +283,8 @@ class TestSenateTrades:
         if len(df) > 0:
             assert df.index.name == "date"
             assert "politician" in df.columns
-            # Survive the DataFrame conversion as columns (values may be
-            # null on rows predating the upstream fields).
+            # Survive the DataFrame conversion as columns (values are
+            # nullable, so missing entries read as NaN).
             assert "disclosureDate" in df.columns
             assert "owner" in df.columns
             assert "amountRaw" in df.columns

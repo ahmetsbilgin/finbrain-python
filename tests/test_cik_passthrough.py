@@ -153,5 +153,8 @@ def test_patents_cik_dataframe(client, _activate_responses):
     stub_json(_activate_responses, "GET", path, payload)
     df = client.patent_filings.ticker(symbol="AAPL", as_dataframe=True)
     assert "cik" in df.columns
+    # The invariant is "never numerically coerced": the value keeps its
+    # leading zeros and the dtype is non-numeric. (Object dtype on pandas 2,
+    # the dedicated str dtype on pandas 3 — both are fine.)
     assert df["cik"].iloc[0] == CIK_AAPL
-    assert pd.api.types.is_object_dtype(df["cik"])  # stays a string column
+    assert not pd.api.types.is_numeric_dtype(df["cik"])

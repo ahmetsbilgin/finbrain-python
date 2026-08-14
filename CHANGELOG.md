@@ -5,11 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.9] - 2026-08-14
 
 ### Added
 
 - **`cik` field on four datasets**: rows from `fb.insider_transactions.ticker()`, `fb.government_contracts.ticker()`, `fb.corporate_lobbying.ticker()`, and `fb.patent_filings.ticker()` (and their async equivalents) now carry `cik` — the SEC Central Index Key of the company as of that record, as a 10-digit zero-padded **string** (`"0000320193"`); `null` where the record has no entity resolution. The field is emitted by the v2 API and passes through both the raw-dict and DataFrame branches with no SDK code changes; tests pin the passthrough (including that the DataFrame column stays string-typed — leading zeros are data)
+- **Documentation**: README "Company identifier (`cik`)" section covering the field, its string typing, the null case, and its use for joining to SEC-keyed datasets
 
 ### Changed
 

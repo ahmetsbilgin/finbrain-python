@@ -174,6 +174,25 @@ every row with any missing field — use `.dropna(subset=[...])`.
 `disclosureDate` and `owner` are also present on
 `fb.screener.congress_house()` and `fb.screener.congress_senate()` rows.
 
+### Company identifier (`cik`)
+
+Rows from the four SEC/government datasets — `fb.insider_transactions`,
+`fb.government_contracts`, `fb.corporate_lobbying`, and `fb.patent_filings`
+(ticker endpoints and their async equivalents) — carry `cik`, the SEC
+**Central Index Key** of the company as of that record:
+
+| Field | Meaning                                                                                     |
+| ----- | ------------------------------------------------------------------------------------------- |
+| `cik` | SEC Central Index Key of the company, as a 10-digit zero-padded string (`"0000320193"`) |
+
+`cik` is a **string, not a number** — the leading zeros are part of the
+identifier, so keep the column as text when loading into other tools. Rows
+without an entity resolution (for example, records of companies absent from
+the SEC's public company file) carry `null`; with `as_dataframe=True` the
+column stays object-typed and missing values read as `None`. Use it to join
+FinBrain rows to SEC-keyed datasets (EDGAR filings, financial statements,
+13F holdings) or to your own security master.
+
 `date_from` / `date_to` bound the **transaction** date, not the disclosure
 date — a trade executed inside the window is returned even if it was disclosed
 after `date_to`.

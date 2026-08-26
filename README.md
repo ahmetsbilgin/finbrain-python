@@ -171,8 +171,9 @@ and the other fields are columns whose missing values read as `None` or
 `NaN` depending on your pandas version — test them with `pandas.isna()`
 rather than `is None`. Note that `.dropna()` on such a frame will discard
 every row with any missing field — use `.dropna(subset=[...])`.
-`disclosureDate` and `owner` are also present on
-`fb.screener.congress_house()` and `fb.screener.congress_senate()` rows.
+All four fields — `owner`, `amountRaw`, `amountFlag` and `disclosureDate` —
+are also present on `fb.screener.congress_house()` and
+`fb.screener.congress_senate()` rows.
 
 ### Company identifier (`cik`)
 

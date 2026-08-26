@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.10] - 2026-08-26
+
+### Added
+
+- **Congressional amount metadata on the screener**: `fb.screener.congress_house()` and `fb.screener.congress_senate()` rows (sync and async) now carry `amountRaw` and `amountFlag`, matching the ticker-level endpoints since 0.2.8. On rows whose `amount` was normalized to its STOCK Act bracket, `amountRaw` preserves the string as originally filed; `amountFlag` is `review` or `ambiguous` when the filed amount could not be safely normalized; both are `null` on clean rows. The fields are emitted by the v2 API and pass through both the raw-dict and DataFrame branches with no SDK code changes; docstrings, README, unit tests and integration tests now cover them
+
+### Changed
+
+- **DataFrame shape**: the congress screener frames gain `amountRaw` and `amountFlag` columns. Code that asserts an exact column set (`set(df.columns) == {...}`) or compares frames for equality needs updating
+
+### Notes
+
+- The raw-dict branch is purely additive — no call-site changes are required to receive the new fields
+
 ## [0.2.9] - 2026-08-14
 
 ### Added

@@ -536,6 +536,8 @@ class TestScreener:
         if data:
             assert "disclosureDate" in data[0]
             assert "owner" in data[0]
+            assert "amountRaw" in data[0]
+            assert "amountFlag" in data[0]
 
     def test_congress_senate(self, fb):
         data = fb.screener.congress_senate(limit=5)
@@ -543,6 +545,8 @@ class TestScreener:
         if data:
             assert "disclosureDate" in data[0]
             assert "owner" in data[0]
+            assert "amountRaw" in data[0]
+            assert "amountFlag" in data[0]
 
     def test_news(self, fb):
         data = fb.screener.news(limit=5)

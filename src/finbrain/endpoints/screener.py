@@ -118,9 +118,13 @@ class ScreenerAPI:
         Rows carry ``symbol``, ``name``, ``date``, ``politician``,
         ``transactionType``, ``amount``, ``owner`` (beneficial owner of the
         account: ``"SELF"``, ``"SP"``, ``"DC"``, ``"JT"``, or an account
-        code) and ``disclosureDate`` (the public disclosure date). ``owner``
-        and ``disclosureDate`` are nullable, though rare — historical rows
-        were backfilled upstream.
+        code), ``amountRaw``, ``amountFlag`` and ``disclosureDate`` (the
+        public disclosure date). On rows whose ``amount`` was normalized to
+        its STOCK Act bracket, ``amountRaw`` preserves the string as
+        originally filed; ``amountFlag`` is ``"review"`` or ``"ambiguous"``
+        when the filed amount could not be safely normalized. Both are
+        ``None`` on clean rows. ``owner`` and ``disclosureDate`` are
+        nullable, though rare — historical rows were backfilled upstream.
         """
         params = self._build_params(limit=limit)
         return self._get("screener/congress/house", params, as_dataframe)
@@ -139,9 +143,14 @@ class ScreenerAPI:
         Rows carry ``symbol``, ``name``, ``date``, ``politician``,
         ``transactionType``, ``amount``, ``owner`` (beneficial owner of the
         account: ``"SELF"``, ``"SP"``, ``"DC"``, ``"JT"``, an account code,
-        or ``"UNKNOWN"`` for blank Senate filings) and ``disclosureDate``
-        (the public disclosure date). ``owner`` and ``disclosureDate`` are
-        nullable, though rare — historical rows were backfilled upstream.
+        or ``"UNKNOWN"`` for blank Senate filings), ``amountRaw``,
+        ``amountFlag`` and ``disclosureDate`` (the public disclosure date).
+        On rows whose ``amount`` was normalized to its STOCK Act bracket,
+        ``amountRaw`` preserves the string as originally filed;
+        ``amountFlag`` is ``"review"`` or ``"ambiguous"`` when the filed
+        amount could not be safely normalized. Both are ``None`` on clean
+        rows. ``owner`` and ``disclosureDate`` are nullable, though rare —
+        historical rows were backfilled upstream.
         """
         params = self._build_params(limit=limit)
         return self._get("screener/congress/senate", params, as_dataframe)

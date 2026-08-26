@@ -100,6 +100,8 @@ def test_screener_congress_house(client, _activate_responses):
             "name": "Apple",
             "politician": "Nancy Pelosi",
             "owner": "SP",
+            "amountRaw": "$1,001 - $15,000 *",
+            "amountFlag": None,
             "disclosureDate": "2026-02-05",
         },
     ])
@@ -109,6 +111,9 @@ def test_screener_congress_house(client, _activate_responses):
     assert len(data) == 1
     assert data[0]["politician"] == "Nancy Pelosi"
     assert data[0]["owner"] == "SP"
+    # The bracket was normalized, so the originally filed string survives.
+    assert data[0]["amountRaw"] == "$1,001 - $15,000 *"
+    assert data[0]["amountFlag"] is None
     assert data[0]["disclosureDate"] == "2026-02-05"
 
 
@@ -119,6 +124,8 @@ def test_screener_congress_house_dataframe(client, _activate_responses):
             "name": "Apple",
             "politician": "Nancy Pelosi",
             "owner": "SP",
+            "amountRaw": None,
+            "amountFlag": None,
             "disclosureDate": "2026-02-05",
         },
         {
@@ -126,6 +133,8 @@ def test_screener_congress_house_dataframe(client, _activate_responses):
             "name": "Microsoft",
             "politician": "Dan Crenshaw",
             "owner": None,
+            "amountRaw": None,
+            "amountFlag": "review",
             "disclosureDate": None,
         },
     ])
@@ -134,10 +143,15 @@ def test_screener_congress_house_dataframe(client, _activate_responses):
     assert isinstance(df, pd.DataFrame)
     assert len(df) == 2
     assert df.index.name == "symbol"
-    assert set(df.columns) == {"name", "politician", "owner", "disclosureDate"}
+    assert set(df.columns) == {
+        "name", "politician", "owner", "amountRaw", "amountFlag", "disclosureDate",
+    }
     assert df.loc["AAPL", "politician"] == "Nancy Pelosi"
     assert df.loc["AAPL", "owner"] == "SP"
     assert df.loc["AAPL", "disclosureDate"] == "2026-02-05"
+    # Un-normalizable amount: the flag survives, amountRaw stays null.
+    assert df.loc["MSFT", "amountFlag"] == "review"
+    assert pd.isna(df.loc["MSFT", "amountRaw"])
     # Nullable fields (rows a reconcile upload could not fill); JSON null
     # becomes NaN once pandas builds the column.
     assert pd.isna(df.loc["MSFT", "disclosureDate"])
@@ -152,6 +166,8 @@ def test_screener_congress_senate(client, _activate_responses):
             "name": "Apple",
             "politician": "John Boozman",
             "owner": "UNKNOWN",
+            "amountRaw": "$1,001-15,000",
+            "amountFlag": None,
             "disclosureDate": "2026-01-22",
         },
     ])
@@ -161,6 +177,9 @@ def test_screener_congress_senate(client, _activate_responses):
     assert len(data) == 1
     assert data[0]["politician"] == "John Boozman"
     assert data[0]["owner"] == "UNKNOWN"
+    # The bracket was normalized, so the originally filed string survives.
+    assert data[0]["amountRaw"] == "$1,001-15,000"
+    assert data[0]["amountFlag"] is None
     assert data[0]["disclosureDate"] == "2026-01-22"
 
 
@@ -171,6 +190,8 @@ def test_screener_congress_senate_dataframe(client, _activate_responses):
             "name": "Apple",
             "politician": "John Boozman",
             "owner": "SELF",
+            "amountRaw": None,
+            "amountFlag": None,
             "disclosureDate": "2026-01-22",
         },
         {
@@ -178,6 +199,8 @@ def test_screener_congress_senate_dataframe(client, _activate_responses):
             "name": "NVIDIA",
             "politician": "Tommy Tuberville",
             "owner": None,
+            "amountRaw": None,
+            "amountFlag": "ambiguous",
             "disclosureDate": None,
         },
     ])
@@ -186,10 +209,15 @@ def test_screener_congress_senate_dataframe(client, _activate_responses):
     assert isinstance(df, pd.DataFrame)
     assert len(df) == 2
     assert df.index.name == "symbol"
-    assert set(df.columns) == {"name", "politician", "owner", "disclosureDate"}
+    assert set(df.columns) == {
+        "name", "politician", "owner", "amountRaw", "amountFlag", "disclosureDate",
+    }
     assert df.loc["NVDA", "politician"] == "Tommy Tuberville"
     assert df.loc["AAPL", "owner"] == "SELF"
     assert df.loc["AAPL", "disclosureDate"] == "2026-01-22"
+    # Un-normalizable amount: the flag survives, amountRaw stays null.
+    assert df.loc["NVDA", "amountFlag"] == "ambiguous"
+    assert pd.isna(df.loc["NVDA", "amountRaw"])
     # Nullable fields (rows a reconcile upload could not fill); JSON null
     # becomes NaN once pandas builds the column.
     assert pd.isna(df.loc["NVDA", "disclosureDate"])

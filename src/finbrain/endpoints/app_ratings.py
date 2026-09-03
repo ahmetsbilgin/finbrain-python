@@ -44,6 +44,48 @@ def _flatten_app_ratings(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return flat
 
 
+def _flatten_apps(apps: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Flatten the per-app series into one row per app per observation.
+
+    A company can publish many apps — Apple has 140 on iOS — so the blended
+    ``data`` view necessarily reports one per platform. This is the granular
+    alternative: no blending and no derived company score, one row per
+    (app, date), so callers weight or filter for themselves.
+
+    ``app_id`` is ``None`` for observations predating the API keying rows per
+    app: the platform is known, the app is not.
+
+    Input format per app::
+
+        {
+            "platform": "ios",
+            "appId": "1108187390",
+            "appName": "Apple Music",
+            "observations": [
+                {"date": "2026-09-01", "score": 4.86,
+                 "ratingsCount": 3074796, "installCount": None},
+                ...
+            ],
+        }
+    """
+    flat: List[Dict[str, Any]] = []
+    for app in apps or []:
+        for obs in app.get("observations") or []:
+            flat.append(
+                {
+                    "date": obs.get("date"),
+                    "platform": app.get("platform"),
+                    "app_id": app.get("appId"),
+                    "app_name": app.get("appName"),
+                    "score": obs.get("score"),
+                    "ratings_count": obs.get("ratingsCount"),
+                    "install_count": obs.get("installCount"),
+                }
+            )
+    return flat
+
+
 class AppRatingsAPI:
     """
     Mobile-app rating analytics for a single ticker.
@@ -77,6 +119,7 @@ class AppRatingsAPI:
         date_to: _dt.date | str | None = None,
         limit: int | None = None,
         as_dataframe: bool = False,
+        per_app: bool = False,
     ) -> Dict[str, Any] | pd.DataFrame:
         """
         Fetch mobile-app ratings for *symbol*.
@@ -90,9 +133,20 @@ class AppRatingsAPI:
         limit :
             Maximum number of records to return.
         as_dataframe :
-            If *True*, return a **pandas.DataFrame** indexed by ``date``
-            with flattened columns (``ios_score``, ``android_score``, etc.);
-            otherwise return the raw JSON dict.
+            If *True*, return a **pandas.DataFrame**; otherwise the raw JSON
+            dict, which carries both views.
+        per_app :
+            Only meaningful with ``as_dataframe``. If *True*, return the
+            granular frame — one row per app per observation, with
+            ``platform``, ``app_id``, ``app_name``, ``score``,
+            ``ratings_count`` and ``install_count``, **not** indexed by date
+            since a date repeats across apps. If *False* (default), return the
+            blended per-date frame indexed by ``date``, which reports the
+            company's biggest app on each platform.
+
+            Prefer ``per_app=True`` for anything quantitative: a company can
+            publish many apps (Apple has 140 on iOS) and which of them matters
+            is your judgement, not ours.
 
         Returns
         -------
@@ -111,6 +165,17 @@ class AppRatingsAPI:
         data = self._c._request("GET", path, params=params)
 
         if as_dataframe:
+            if per_app:
+                flat = _flatten_apps(data.get("apps") or [])
+                df = pd.DataFrame(flat)
+                if not df.empty and "date" in df.columns:
+                    df["date"] = pd.to_datetime(df["date"])
+                    # Deliberately NOT indexed by date: one date carries one
+                    # row per app, so a date index would not be unique.
+                    df.sort_values(["app_id", "date"], inplace=True)
+                    df.reset_index(drop=True, inplace=True)
+                return df
+
             rows: List[Dict[str, Any]] = data.get("data", [])
             flat = _flatten_app_ratings(rows)
             df = pd.DataFrame(flat)

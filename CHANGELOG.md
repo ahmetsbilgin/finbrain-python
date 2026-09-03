@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Per-app app ratings**: `fb.app_ratings.ticker(..., as_dataframe=True, per_app=True)` (sync and async) returns the granular frame the v2 API's new `apps[]` carries — one row per app per observation with `platform`, `app_id`, `app_name`, `score`, `ratings_count` and `install_count`. A company can publish many apps (Apple has 140 on iOS), and the blended per-date view necessarily reports only its biggest on each store; the per-app frame does no blending and derives no company score, leaving the weighting to the caller. Deliberately **not** indexed by `date`, since a date carries one row per app
+- **`app_id` on the app-ratings chart**: `fb.plot.app_ratings(..., app_id=...)` charts one specific app rather than the company's largest on that store, and raises listing the available ids when the requested one is absent
+- **Documentation**: README "App ratings: the per-app view (`per_app=True`)" section covering the columns, the unindexed frame, the null `app_id` case and the plotting parameter
+
+### Fixed
+
+- **App-ratings chart with a mismatched store**: passing an iOS `app_id` with `store="play"` (or the reverse) relabelled that app's series as the other platform's and plotted it. It now raises, naming the store the app actually lives on
+
+### Notes
+
+- Purely additive: `per_app=False` remains the default and the blended frame is byte-for-byte unchanged. An API deployment predating `apps[]` yields an empty per-app frame rather than an error, so the SDK can ship before or after the API
+
 ## [0.2.10] - 2026-08-26
 
 ### Added

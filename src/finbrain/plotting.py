@@ -26,6 +26,7 @@ class _PlotNamespace:
         ticker: str,
         *,
         store: str = "play",
+        app_id: str | None = None,
         date_from: str | None = None,
         date_to: str | None = None,
         as_json: bool = False,
@@ -43,29 +44,75 @@ class _PlotNamespace:
         ----------
         store : {'play', 'app'}, default 'play'
             Which store to visualise.
+        app_id :
+            Plot one specific app rather than the company's biggest on that
+            store. A company can publish many apps — Apple has 140 on iOS —
+            and the default picks only the largest, so pass this when you care
+            about a particular one. Ids come from
+            ``fb.app_ratings.ticker(sym, as_dataframe=True, per_app=True)``.
         Other args/kwargs identical to the other plotting wrappers.
         """
-        # 1) pull data
-        df: pd.DataFrame = self._fb.app_ratings.ticker(
-            ticker,
-            date_from=date_from,
-            date_to=date_to,
-            as_dataframe=True,
-            **kwargs,
-        )
-
-        # 2) pick columns & colours
         s = store.lower()
         if s in ("play", "playstore", "google", "android"):
-            count_col, score_col = "android_ratingsCount", "android_score"
-            count_name, score_name = "Android Ratings Count", "Android Score"
-            count_color, score_color = "rgba(0,190,0,0.65)", "#02d2ff"
+            platform = "android"
         elif s in ("app", "appstore", "apple", "ios"):
-            count_col, score_col = "ios_ratingsCount", "ios_score"
-            count_name, score_name = "iOS Ratings Count", "iOS Score"
-            count_color, score_color = "rgba(0,190,0,0.65)", "#02d2ff"
+            platform = "ios"
         else:
             raise ValueError("store must be 'play' or 'app'")
+
+        # 1) pull data
+        if app_id is not None:
+            per_app: pd.DataFrame = self._fb.app_ratings.ticker(
+                ticker,
+                date_from=date_from,
+                date_to=date_to,
+                as_dataframe=True,
+                per_app=True,
+                **kwargs,
+            )
+            if per_app.empty or "app_id" not in per_app.columns:
+                raise ValueError(f"no per-app data available for {ticker}")
+            subset = per_app[per_app["app_id"] == app_id]
+            if subset.empty:
+                available = sorted({a for a in per_app["app_id"].dropna().unique()})
+                raise ValueError(
+                    f"app_id {app_id!r} not found for {ticker}; available: {available}"
+                )
+            # An app lives on one store. Without this check, asking for an
+            # iOS app with store="play" would relabel its series as Android
+            # and plot it, which is worse than refusing.
+            app_platforms = set(subset["platform"].dropna().unique())
+            if app_platforms and platform not in app_platforms:
+                raise ValueError(
+                    f"app_id {app_id!r} is on {'/'.join(sorted(app_platforms))}, "
+                    f"but store={store!r} plots {platform}"
+                )
+
+            # Reshape to the column names the plotting code below expects.
+            df = subset.set_index("date").rename(
+                columns={
+                    "score": f"{platform}_score",
+                    "ratings_count": f"{platform}_ratingsCount",
+                    "install_count": f"{platform}_installCount",
+                }
+            )
+        else:
+            df: pd.DataFrame = self._fb.app_ratings.ticker(
+                ticker,
+                date_from=date_from,
+                date_to=date_to,
+                as_dataframe=True,
+                **kwargs,
+            )
+
+        # 2) pick columns & colours
+        if platform == "android":
+            count_col, score_col = "android_ratingsCount", "android_score"
+            count_name, score_name = "Android Ratings Count", "Android Score"
+        else:
+            count_col, score_col = "ios_ratingsCount", "ios_score"
+            count_name, score_name = "iOS Ratings Count", "iOS Score"
+        count_color, score_color = "rgba(0,190,0,0.65)", "#02d2ff"
 
         # 3) dynamic axis ranges
         max_cnt = float(df[count_col].max())
@@ -912,9 +959,7 @@ class _PlotNamespace:
             mentions_normalized = self._to_naive_index(mentions_df)
 
             # Exclude _all (aggregate) — use individual subreddits for stacked bars
-            per_sub = mentions_normalized[
-                mentions_normalized["subreddit"] != "_all"
-            ]
+            per_sub = mentions_normalized[mentions_normalized["subreddit"] != "_all"]
 
             if not per_sub.empty:
                 for subreddit in sorted(per_sub["subreddit"].unique()):
@@ -1010,7 +1055,9 @@ class _PlotNamespace:
                 latest[sym] = row
 
         # Sort by totalMentions descending, take top N
-        ranked = sorted(latest.values(), key=lambda r: r.get("totalMentions", 0), reverse=True)
+        ranked = sorted(
+            latest.values(), key=lambda r: r.get("totalMentions", 0), reverse=True
+        )
         top = ranked[:top_n]
 
         # Reverse so the highest-mentioned ticker is at the top of the chart
@@ -1406,7 +1453,9 @@ class _PlotNamespace:
                 """Nearest available price for a rating date."""
                 if when in price_data_normalized.index:
                     return price_data_normalized.loc[when, price_col]
-                idx = price_data_normalized.index.get_indexer([when], method="nearest")[0]
+                idx = price_data_normalized.index.get_indexer([when], method="nearest")[
+                    0
+                ]
                 if 0 <= idx < len(price_data_normalized):
                     return price_data_normalized.iloc[idx][price_col]
                 return None
@@ -1434,8 +1483,7 @@ class _PlotNamespace:
 
             # Bucket each rating row by action category
             buckets: dict[str, dict[str, list]] = {
-                key: {"x": [], "y": [], "symbol": [], "hover": []}
-                for key in categories
+                key: {"x": [], "y": [], "symbol": [], "hover": []} for key in categories
             }
 
             for pos, (when, row) in enumerate(ratings_normalized.iterrows()):

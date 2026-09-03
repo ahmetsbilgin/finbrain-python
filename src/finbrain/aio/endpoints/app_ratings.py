@@ -26,6 +26,25 @@ def _flatten_app_ratings(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return flat
 
 
+def _flatten_apps(apps: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """One row per app per observation — see the sync endpoint for the rationale."""
+    flat: List[Dict[str, Any]] = []
+    for app in apps or []:
+        for obs in app.get("observations") or []:
+            flat.append(
+                {
+                    "date": obs.get("date"),
+                    "platform": app.get("platform"),
+                    "app_id": app.get("appId"),
+                    "app_name": app.get("appName"),
+                    "score": obs.get("score"),
+                    "ratings_count": obs.get("ratingsCount"),
+                    "install_count": obs.get("installCount"),
+                }
+            )
+    return flat
+
+
 class AsyncAppRatingsAPI:
     """Async wrapper for mobile-app rating analytics."""
 
@@ -40,8 +59,15 @@ class AsyncAppRatingsAPI:
         date_to: _dt.date | str | None = None,
         limit: int | None = None,
         as_dataframe: bool = False,
+        per_app: bool = False,
     ) -> Dict[str, Any] | pd.DataFrame:
-        """Fetch mobile-app ratings for a symbol (async)."""
+        """Fetch mobile-app ratings for a symbol (async).
+
+        ``per_app=True`` returns the granular frame — one row per app per
+        observation — instead of the blended per-date view. A company can
+        publish many apps, so the blended view necessarily reports only its
+        biggest on each platform.
+        """
         params: Dict[str, str] = {}
 
         if date_from:
@@ -55,6 +81,16 @@ class AsyncAppRatingsAPI:
         data = await self._c._request("GET", path, params=params)
 
         if as_dataframe:
+            if per_app:
+                flat = _flatten_apps(data.get("apps") or [])
+                df = pd.DataFrame(flat)
+                if not df.empty and "date" in df.columns:
+                    df["date"] = pd.to_datetime(df["date"])
+                    # Not indexed by date: a date repeats across apps.
+                    df.sort_values(["app_id", "date"], inplace=True)
+                    df.reset_index(drop=True, inplace=True)
+                return df
+
             rows: List[Dict[str, Any]] = data.get("data", [])
             flat = _flatten_app_ratings(rows)
             df = pd.DataFrame(flat)

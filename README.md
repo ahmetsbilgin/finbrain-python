@@ -49,6 +49,14 @@ fb.app_ratings.ticker("AMZN",
                       date_to="2025-06-30",
                       as_dataframe=True)
 
+# One row per app per date instead of one blended row per date
+# — see "App ratings: the per-app view" below.
+fb.app_ratings.ticker("AMZN",
+                      date_from="2025-01-01",
+                      date_to="2025-06-30",
+                      as_dataframe=True,
+                      per_app=True)
+
 # ---------- analyst ratings ----------
 fb.analyst_ratings.ticker("AMZN",
                           date_from="2025-01-01",
@@ -213,6 +221,55 @@ own = [
 ]
 ```
 
+### App ratings: the per-app view (`per_app=True`)
+
+A company can publish many apps — Apple has 140 on iOS. The default frame
+reports **one row per date**, carrying the company's biggest app on each
+store, so a portfolio collapses to two numbers. `per_app=True` returns the
+granular alternative: one row per app per observation, with no blending and no
+derived company score, so you decide which apps matter and how to weight them.
+
+```python
+apps = fb.app_ratings.ticker(
+    "AMZN",
+    date_from="2025-01-01",
+    date_to="2025-06-30",
+    as_dataframe=True,
+    per_app=True,
+)
+
+apps.columns
+# ['date', 'platform', 'app_id', 'app_name',
+#  'score', 'ratings_count', 'install_count']
+
+# Which apps exist, and how big each is
+apps.groupby(["platform", "app_id", "app_name"])["ratings_count"].max()
+
+# One app's own series
+apps[apps["app_id"] == "com.amazon.mShop.android.shopping"]
+```
+
+| Column          | Meaning                                                          |
+| --------------- | ---------------------------------------------------------------- |
+| `platform`      | `ios` or `android`                                                |
+| `app_id`        | App Store numeric id or Play package name; `null` — see below     |
+| `app_name`      | App title as published on the store                               |
+| `score`         | Average rating, 0–5                                               |
+| `ratings_count` | Number of ratings                                                 |
+| `install_count` | Play Store only — Apple publishes no install count, so `null` on `ios` |
+
+Three things to know:
+
+- **Not indexed by date.** A single date carries one row per app, so a date
+  index would not be unique. The blended frame (`per_app=False`, the default)
+  is still indexed by `date` and is unchanged.
+- **`app_id` is `null` on older observations**, collected before the API keyed
+  rows per app. Those rows carry the platform but not the app identity — we
+  know the store, not which app produced the number. Filter them with
+  `apps["app_id"].notna()` if you need identified apps only.
+- **Purely additive.** `per_app=False` behaviour is untouched, and an API that
+  predates the per-app view returns an empty frame rather than an error.
+
 ## ⚡ Async Usage
 
 For async/await support, install with the `async` extra:
@@ -266,6 +323,14 @@ Plot helpers in a nutshell
 # ---------- App Ratings Chart - Apple App Store or Google Play Store ----------
 fb.plot.app_ratings("AMZN",
                     store="app",                # "play" for Google Play Store
+                    date_from="2025-01-01",
+                    date_to="2025-06-30")
+
+# Chart one specific app rather than the company's biggest on that store.
+# Ids come from the per_app frame; the app must live on the store you pass.
+fb.plot.app_ratings("AMZN",
+                    store="play",
+                    app_id="com.amazon.mShop.android.shopping",
                     date_from="2025-01-01",
                     date_to="2025-06-30")
 

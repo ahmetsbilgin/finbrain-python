@@ -52,6 +52,28 @@ class MockAppRatingsClient:
             return df
 
 
+class MockPerAppRatingsClient:
+    """Client whose app_ratings endpoint honours per_app, like the real one."""
+
+    class app_ratings:
+        @staticmethod
+        def ticker(*args, per_app=False, **kwargs):
+            if not per_app:
+                return MockAppRatingsClient.app_ratings.ticker(*args, **kwargs)
+            # Long frame: one row per app per observation, NOT date-indexed.
+            return pd.DataFrame({
+                "date": pd.to_datetime(
+                    ["2024-01-01", "2024-01-02", "2024-01-01", "2024-01-02"]
+                ),
+                "platform": ["android", "android", "ios", "ios"],
+                "app_id": ["com.small", "com.small", "111", "111"],
+                "app_name": ["Small App", "Small App", "iOS App", "iOS App"],
+                "score": [3.9, 4.0, 4.7, 4.8],
+                "ratings_count": [10, 12, 500, 520],
+                "install_count": [1000, 1100, None, None],
+            })
+
+
 class MockLinkedInClient:
     class linkedin_data:
         @staticmethod
@@ -290,6 +312,32 @@ def test_app_ratings_plot_invalid_store():
     plot = _PlotNamespace(MockAppRatingsClient())
     with pytest.raises(ValueError, match="store must be 'play' or 'app'"):
         plot.app_ratings("AMZN", store="invalid", show=False)
+
+
+def test_app_ratings_plot_specific_app():
+    """app_id charts that app, not the company's biggest on the store."""
+    plot = _PlotNamespace(MockPerAppRatingsClient())
+    fig = plot.app_ratings("AMZN", store="play", app_id="com.small", show=False)
+
+    assert isinstance(fig, go.Figure)
+    # The small app's own counts, not the blended frame's 1000/1200/1100.
+    assert list(fig.data[0].y) == [10, 12]
+    assert list(fig.data[1].y) == [3.9, 4.0]
+
+
+def test_app_ratings_plot_unknown_app_id_lists_what_exists():
+    plot = _PlotNamespace(MockPerAppRatingsClient())
+    with pytest.raises(ValueError, match="not found") as exc:
+        plot.app_ratings("AMZN", store="play", app_id="com.nope", show=False)
+    # An empty chart would read as "this app has no ratings"; say what exists.
+    assert "com.small" in str(exc.value)
+
+
+def test_app_ratings_plot_rejects_app_from_the_other_store():
+    """An iOS app under store='play' must fail, not be relabelled Android."""
+    plot = _PlotNamespace(MockPerAppRatingsClient())
+    with pytest.raises(ValueError, match="is on ios"):
+        plot.app_ratings("AMZN", store="play", app_id="111", show=False)
 
 
 def test_app_ratings_plot_as_json():

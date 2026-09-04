@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.0] - 2026-09-04
 
 ### Added
 
@@ -13,25 +13,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`app_id` on the app-ratings chart**: `fb.plot.app_ratings(..., app_id=...)` charts one specific app rather than the company's largest on that store, and raises listing the available ids when the requested one is absent
 - **Documentation**: README "App ratings: the per-app view (`per_app=True`)" section covering the columns, the unindexed frame, the null `app_id` case and the plotting parameter
 
-### Fixed
-
-- **App-ratings chart with a mismatched store**: passing an iOS `app_id` with `store="play"` (or the reverse) relabelled that app's series as the other platform's and plotted it. It now raises, naming the store the app actually lives on
-
-### Notes
-
-- Purely additive: `per_app=False` remains the default and the blended frame is byte-for-byte unchanged. An API deployment predating `apps[]` yields an empty per-app frame rather than an error, so the SDK can ship before or after the API
-
-## [0.2.10] - 2026-08-26
-
-### Added
-
 - **Congressional amount metadata on the screener**: `fb.screener.congress_house()` and `fb.screener.congress_senate()` rows (sync and async) now carry `amountRaw` and `amountFlag`, matching the ticker-level endpoints since 0.2.8. On rows whose `amount` was normalized to its STOCK Act bracket, `amountRaw` preserves the string as originally filed; `amountFlag` is `review` or `ambiguous` when the filed amount could not be safely normalized; both are `null` on clean rows. The fields are emitted by the v2 API and pass through both the raw-dict and DataFrame branches with no SDK code changes; docstrings, README, unit tests and integration tests now cover them
 
 ### Changed
 
 - **DataFrame shape**: the congress screener frames gain `amountRaw` and `amountFlag` columns. Code that asserts an exact column set (`set(df.columns) == {...}`) or compares frames for equality needs updating
 
+### Fixed
+
+- **App-ratings chart with a mismatched store**: passing an iOS `app_id` with `store="play"` (or the reverse) relabelled that app's series as the other platform's and plotted it. It now raises, naming the store the app actually lives on
+
 ### Notes
+
+- Also carries the 0.2.10 changes below, written up on 2026-08-26 but never tagged or published (PyPI went from 0.2.9 straight to this release)
+- Purely additive: `per_app=False` remains the default and the blended frame is byte-for-byte unchanged. An API deployment predating `apps[]` yields an empty per-app frame rather than an error, so the SDK can ship before or after the API
 
 - The raw-dict branch is purely additive — no call-site changes are required to receive the new fields
 
@@ -274,6 +269,7 @@ Previous releases...
 
 Previous releases...
 
+[0.3.0]: https://github.com/ahmetsbilgin/finbrain-python/compare/v0.2.9...v0.3.0
 [0.2.1]: https://github.com/ahmetsbilgin/finbrain-python/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/ahmetsbilgin/finbrain-python/compare/v0.1.8...v0.2.0
 [0.1.8]: https://github.com/ahmetsbilgin/finbrain-python/compare/v0.1.7...v0.1.8

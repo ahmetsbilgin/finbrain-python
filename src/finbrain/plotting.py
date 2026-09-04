@@ -61,6 +61,7 @@ class _PlotNamespace:
             raise ValueError("store must be 'play' or 'app'")
 
         # 1) pull data
+        df: pd.DataFrame
         if app_id is not None:
             per_app: pd.DataFrame = self._fb.app_ratings.ticker(
                 ticker,
@@ -97,7 +98,7 @@ class _PlotNamespace:
                 }
             )
         else:
-            df: pd.DataFrame = self._fb.app_ratings.ticker(
+            df = self._fb.app_ratings.ticker(
                 ticker,
                 date_from=date_from,
                 date_to=date_to,

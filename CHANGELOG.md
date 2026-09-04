@@ -12,7 +12,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Per-app app ratings**: `fb.app_ratings.ticker(..., as_dataframe=True, per_app=True)` (sync and async) returns the granular frame the v2 API's new `apps[]` carries — one row per app per observation with `platform`, `app_id`, `app_name`, `score`, `ratings_count` and `install_count`. A company can publish many apps (Apple has 140 on iOS), and the blended per-date view necessarily reports only its biggest on each store; the per-app frame does no blending and derives no company score, leaving the weighting to the caller. Deliberately **not** indexed by `date`, since a date carries one row per app
 - **`app_id` on the app-ratings chart**: `fb.plot.app_ratings(..., app_id=...)` charts one specific app rather than the company's largest on that store, and raises listing the available ids when the requested one is absent
 - **Documentation**: README "App ratings: the per-app view (`per_app=True`)" section covering the columns, the unindexed frame, the null `app_id` case and the plotting parameter
-
 - **Congressional amount metadata on the screener**: `fb.screener.congress_house()` and `fb.screener.congress_senate()` rows (sync and async) now carry `amountRaw` and `amountFlag`, matching the ticker-level endpoints since 0.2.8. On rows whose `amount` was normalized to its STOCK Act bracket, `amountRaw` preserves the string as originally filed; `amountFlag` is `review` or `ambiguous` when the filed amount could not be safely normalized; both are `null` on clean rows. The fields are emitted by the v2 API and pass through both the raw-dict and DataFrame branches with no SDK code changes; docstrings, README, unit tests and integration tests now cover them
 
 ### Changed
@@ -25,9 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Notes
 
-- Also carries the 0.2.10 changes below, written up on 2026-08-26 but never tagged or published (PyPI went from 0.2.9 straight to this release)
+- Also carries the congressional screener changes written up as 0.2.10 on 2026-08-26, which were never tagged or published: PyPI goes from 0.2.9 straight to this release
 - Purely additive: `per_app=False` remains the default and the blended frame is byte-for-byte unchanged. An API deployment predating `apps[]` yields an empty per-app frame rather than an error, so the SDK can ship before or after the API
-
 - The raw-dict branch is purely additive — no call-site changes are required to receive the new fields
 
 ## [0.2.9] - 2026-08-14

@@ -72,6 +72,7 @@ def test_app_ratings_dataframe(client, _activate_responses):
         "android_score",
         "android_ratingsCount",
         "android_installCount",
+        "cik",          # one value per company, repeated down the frame
     }
     assert df.loc["2024-01-15", "ios_score"] == 4.07
     assert df.loc["2024-01-15", "android_ratingsCount"] == 567996
@@ -98,6 +99,7 @@ def _per_app_payload():
         {
             "symbol": "AAPL",
             "name": "Apple Inc.",
+            "cik": "0000320193",
             "data": [
                 {
                     "date": "2026-09-01",
@@ -231,3 +233,36 @@ def test_app_ratings_per_app_empty_when_api_predates_apps(client, _activate_resp
     df = client.app_ratings.ticker("AMZN", as_dataframe=True, per_app=True)
     assert isinstance(df, pd.DataFrame)
     assert df.empty
+
+
+# ─────────── entity identity ────────────────────────────────────────────
+def test_app_ratings_frames_carry_the_company_cik(client, _activate_responses):
+    """Both frames carry `cik` so they can be joined on the entity.
+
+    A symbol is not an identity: it gets renamed (BK -> BNY) and recycled.
+    The CIK is one value per company, so it repeats down the frame, and it
+    stays a string because the leading zeros are part of the identifier.
+    """
+    path = "app-ratings/AAPL"
+    stub_json(_activate_responses, "GET", path, _per_app_payload())
+
+    per_app = client.app_ratings.ticker("AAPL", as_dataframe=True, per_app=True)
+    assert list(per_app["cik"].unique()) == ["0000320193"]
+    assert per_app["cik"].dtype == object
+    assert len(per_app) == 4          # the column does not add or drop rows
+
+    stub_json(_activate_responses, "GET", path, _per_app_payload())
+    blended = client.app_ratings.ticker("AAPL", as_dataframe=True)
+    assert list(blended["cik"].unique()) == ["0000320193"]
+
+    # the raw branch is a passthrough: no SDK code decides what it carries
+    stub_json(_activate_responses, "GET", path, _per_app_payload())
+    assert client.app_ratings.ticker("AAPL")["cik"] == "0000320193"
+
+
+def test_app_ratings_cik_column_exists_when_the_issuer_has_none(client, _activate_responses):
+    """A non-US listing has no CIK; the column is still there, all null."""
+    payload = wrap_v2({"symbol": "SAP.DE", "name": "SAP SE", "cik": None, "data": [], "apps": []})
+    stub_json(_activate_responses, "GET", "app-ratings/SAP.DE", payload)
+    df = client.app_ratings.ticker("SAP.DE", as_dataframe=True, per_app=True)
+    assert "cik" in df.columns and df["cik"].isna().all()

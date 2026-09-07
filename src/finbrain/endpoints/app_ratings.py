@@ -148,6 +148,12 @@ class AppRatingsAPI:
             publish many apps (Apple has 140 on iOS) and which of them matters
             is your judgement, not ours.
 
+            Either frame carries a ``cik`` column: the company's SEC Central
+            Index Key, a 10-digit zero-padded string (leading zeros are data),
+            ``None`` for an issuer with no SEC registration. It is one value
+            per company, repeated down the frame, so a frame can be joined to
+            the other FinBrain datasets on the entity rather than the symbol.
+
         Returns
         -------
         dict | pandas.DataFrame
@@ -165,6 +171,12 @@ class AppRatingsAPI:
         data = self._c._request("GET", path, params=params)
 
         if as_dataframe:
+            # One value per company, so it is a constant column rather than a
+            # per-row field. Assigned after the flatten so the flatten stays a
+            # pure function of the rows it is given. Kept as an object column:
+            # a numeric dtype would eat the leading zeros.
+            cik = data.get("cik")
+
             if per_app:
                 flat = _flatten_apps(data.get("apps") or [])
                 df = pd.DataFrame(flat)
@@ -174,6 +186,7 @@ class AppRatingsAPI:
                     # row per app, so a date index would not be unique.
                     df.sort_values(["app_id", "date"], inplace=True)
                     df.reset_index(drop=True, inplace=True)
+                df["cik"] = cik
                 return df
 
             rows: List[Dict[str, Any]] = data.get("data", [])
@@ -182,6 +195,7 @@ class AppRatingsAPI:
             if not df.empty and "date" in df.columns:
                 df["date"] = pd.to_datetime(df["date"])
                 df.set_index("date", inplace=True)
+            df["cik"] = cik
             return df
 
         return data

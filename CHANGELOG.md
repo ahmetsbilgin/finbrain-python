@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`cik` on app ratings**: the v2 API now carries the company's SEC Central Index Key on the app-ratings response, and both DataFrame branches expose it as a `cik` column (`per_app=True` and the blended view). It is one value per company, repeated down the frame, kept as a string because the leading zeros are part of the identifier, and `None` for an issuer with no SEC registration such as a non-US listing. The raw-dict branch carried it already, being a passthrough. A CIK survives what a symbol does not: renames (BK became BNY) and recycled symbols, so it is the key to join app ratings to the insider, lobbying, contracts and patents datasets
+
 ## [0.3.0] - 2026-09-04
 
 ### Added

@@ -248,7 +248,10 @@ def test_app_ratings_frames_carry_the_company_cik(client, _activate_responses):
 
     per_app = client.app_ratings.ticker("AAPL", as_dataframe=True, per_app=True)
     assert list(per_app["cik"].unique()) == ["0000320193"]
-    assert per_app["cik"].dtype == object
+    # What matters is that a numeric dtype never eats the leading zeros.
+    # (Object dtype on pandas 2, the dedicated str dtype on pandas 3 - both
+    # are fine, so assert the property, not the implementation.)
+    assert not pd.api.types.is_numeric_dtype(per_app["cik"])
     assert len(per_app) == 4          # the column does not add or drop rows
 
     stub_json(_activate_responses, "GET", path, _per_app_payload())
